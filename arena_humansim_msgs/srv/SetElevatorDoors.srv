@@ -1,6 +1,0 @@
-# Open or close cabin doors by name
-string[] name     # cabin names
-bool[] open       # door open, one per name
----
-bool success
-string message

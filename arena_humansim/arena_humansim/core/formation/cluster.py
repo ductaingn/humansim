@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Callable
 
 import attrs
 
@@ -17,6 +18,7 @@ from .anchor import Anchor
 class _Slot:
     pose: Pose2D
     agent_id: int | None = None
+    seat: int = -1
 
 
 class ClusterFormation(Formation):
@@ -34,12 +36,15 @@ class ClusterFormation(Formation):
         radius: float = 1.2,
         capacity: int = 8,
         formation_scale: float = 1.0,
+        admissible: Callable[[int], bool] | None = None,
     ) -> None:
         self.anchor = anchor
         self.agent_lookup = agent_lookup
         self.formation_scale = formation_scale
+        self._admissible = admissible
+        self._waiting: list[int] = []
         if slot_poses is not None:
-            self._slots = [_Slot(pose=p) for p in slot_poses]
+            self._slots = [_Slot(pose=p, seat=i) for i, p in enumerate(slot_poses)]
             self._generated = False
         else:
             self._slots = self._generate_slots(anchor.pose(), radius * formation_scale, capacity)
@@ -60,28 +65,24 @@ class ClusterFormation(Formation):
         if not participant and not self._generated:
             # explicit seats belong to sitters, a queued member waits where it stopped instead of standing on the furniture
             return
-        if any(s.agent_id == agent_id for s in self._slots):
+        if any(s.agent_id == agent_id for s in self._slots) or agent_id in self._waiting:
             return
+        if not self._assign(agent_id) and not self._generated:
+            self._waiting.append(agent_id)
+
+    def _assign(self, agent_id: int) -> bool:
+        free = [s for s in self._slots if s.agent_id is None and (self._generated or self._admissible is None or self._admissible(s.seat))]
+        if not free:
+            return False
         agent = self.agent_lookup(agent_id)
-        if agent is None:
-            free = next((s for s in self._slots if s.agent_id is None), None)
-            if free is not None:
-                free.agent_id = agent_id
-            return
-        ap = agent.state.pose
-        best: _Slot | None = None
-        best_d = float("inf")
-        for s in self._slots:
-            if s.agent_id is not None:
-                continue
-            d = pose_distance(s.pose, ap)
-            if d < best_d:
-                best_d = d
-                best = s
-        if best is not None:
-            best.agent_id = agent_id
+        best = free[0] if agent is None else min(free, key=lambda s: pose_distance(s.pose, agent.state.pose))
+        best.agent_id = agent_id
+        return True
 
     def on_leave(self, agent_id: int) -> None:
+        if agent_id in self._waiting:
+            self._waiting.remove(agent_id)
+            return
         for s in self._slots:
             if s.agent_id == agent_id:
                 s.agent_id = None
@@ -98,12 +99,15 @@ class ClusterFormation(Formation):
                     dy = center.y - anchor_y
                     for s in self._slots:
                         s.pose = Pose2D(x=s.pose.x + dx, y=s.pose.y + dy, theta=s.pose.theta)
+        for agent_id in list(self._waiting):
+            if self._assign(agent_id):
+                self._waiting.remove(agent_id)
         return {s.agent_id: s.pose for s in self._slots if s.agent_id is not None}
 
     def arrived(self, agent_id: int) -> bool:
         slot = next((s for s in self._slots if s.agent_id == agent_id), None)
         if slot is None:
-            return True
+            return agent_id not in self._waiting
         agent = self.agent_lookup(agent_id)
         if agent is None:
             return True
@@ -119,7 +123,11 @@ class ClusterFormation(Formation):
             return None
         return self.slot_of(agent_id)
 
-    def occupied_slots(self) -> list[Pose2D]:
+    def seat_index_of(self, agent_id: int) -> int | None:
+        slot = next((s for s in self._slots if s.agent_id == agent_id), None)
+        return slot.seat if slot is not None and not self._generated else None
+
+    def held_seats(self) -> list[int]:
         if self._generated:
             return []
-        return [s.pose for s in self._slots if s.agent_id is not None]
+        return [s.seat for s in self._slots if s.agent_id is not None]

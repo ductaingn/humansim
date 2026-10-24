@@ -36,6 +36,7 @@ SCENARIO_ONLY_KEYS = (
     "agent_types",
     "world_objects",
     "walls",
+    "teleport_zones",
     "obstacles",
     "event_scripts",
 )

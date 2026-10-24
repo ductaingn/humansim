@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING, Any
 import attrs
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from arena_humansim.core.access import AccessPolicy
     from arena_humansim.core.formation import Formation
     from arena_humansim.core.interaction_kinds import InteractionType
@@ -165,6 +167,7 @@ class InteractionContract:
     elapsed: float = 0.0
     access: AccessPolicy | None = None
     formation: Formation | None = None
+    seat_gate: Callable[[], bool] | None = None  # None = no seats to wait for
 
     @property
     def queue_length(self) -> int:
@@ -178,7 +181,9 @@ class InteractionContract:
 
     @property
     def is_full(self) -> bool:
-        return self.max_participants != -1 and len(self.current_participants) >= self.max_participants
+        if self.max_participants != -1 and len(self.current_participants) >= self.max_participants:
+            return True
+        return self.seat_gate is not None and not self.seat_gate()
 
     @property
     def can_admit(self) -> bool:

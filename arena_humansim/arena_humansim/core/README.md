@@ -85,7 +85,7 @@ A formation tick is an `update(..., formations=True)` call. The agent manager ma
 2. Object-level metadata - `WorldObject.formation` for `interaction.object_id`.
 3. Registry default - `InteractionType(...).kind.formation_default`.
 
-`WorldObject.seats` become the `slot_poses` of a `cluster` formation, so a sitter is placed on a seat rather than on a generated ring. Seats another live interaction on the same object already holds are filtered out, so a `SIT_ON` and a `LIE_ON` on one bench cannot pin two agents to the same pose. Only participants are given a seat: a queued member waits where it stopped and claims one on promotion.
+`WorldObject.seats` become the `slot_poses` of a `cluster` formation, so a sitter is placed on a seat rather than on a generated ring. A seat is assigned only while it fits: no live interaction on the object holds it or one of its `seat_conflicts`, so a `SIT_ON` and a `LIE_ON` on one bench never hold the same or overlapping seats. A participant with no fitting seat waits off the furniture and takes the nearest one that fits once it frees. A full seated interaction sends the next seeker to a new interaction while its object has a seat that fits and nobody waits or queues for one, so an object seats as many sitters as its seats allow, and queues it otherwise. A seated interaction admits a participant only while a seat fits for it, and when a seat fits the head of a full seated interaction's queue moves into a new interaction before newcomers seek. Only participants are given a seat: a queued member waits where it stopped and claims one on promotion. `membership_table` reports each participant's seat index, published as `InteractionFrame.member_seat`.
 
 `_anchor_from_spec(spec, interaction)` dispatches on `AnchorKind`:
 

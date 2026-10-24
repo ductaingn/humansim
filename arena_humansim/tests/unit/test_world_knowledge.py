@@ -34,6 +34,23 @@ def test_add_remove_round_trip() -> None:
     assert len(wk) == 0
 
 
+def test_readded_object_replaces_its_type_entry() -> None:
+    wk = _make_wk()
+    wk.add_object(_obj("b1", type_="bench", x=9.0))
+    readded = _obj("b1", type_="bench", x=1.0)
+    wk.add_object(readded)
+    assert wk.get_by_type("bench") == [readded]
+    assert wk.nearest_object("bench", Pose2D(x=9.0)) is readded
+
+
+def test_readded_object_with_a_new_type_leaves_the_old_type() -> None:
+    wk = _make_wk()
+    wk.add_object(_obj("b1", type_="bench"))
+    wk.add_object(_obj("b1", type_="sofa"))
+    assert "bench" not in wk._by_type
+    assert len(wk.get_by_type("sofa")) == 1
+
+
 def test_remove_unknown_returns_none() -> None:
     wk = _make_wk()
     assert wk.remove_object("ghost") is None

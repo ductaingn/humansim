@@ -1,5 +1,0 @@
-# Replace every elevator cabin, an empty list removes them all
-arena_humansim_msgs/Elevator[] elevators
----
-bool success
-string message

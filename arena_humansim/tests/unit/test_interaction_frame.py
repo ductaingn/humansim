@@ -95,8 +95,8 @@ def test_membership_table_changes_when_a_queued_agent_leaves_and_empties_on_rese
 
 def test_interaction_frame_flattens_members_with_offsets_roles_and_edges() -> None:
     table = (
-        InteractionRow(4, int(InteractionType.QUEUE_USE), int(InteractionOutcome.ACTIVE), "counter", (1,), (3, 2), True, True, 5.0),
-        InteractionRow(7, int(InteractionType.GROUP_CONVERSATION), int(InteractionOutcome.FORMING), "", (2, 5), (), False, False, -1.0),
+        InteractionRow(4, int(InteractionType.QUEUE_USE), int(InteractionOutcome.ACTIVE), "counter", (1,), (3, 2), True, True, 5.0, (2,)),
+        InteractionRow(7, int(InteractionType.GROUP_CONVERSATION), int(InteractionOutcome.FORMING), "", (2, 5), (), False, False, -1.0, (-1, -1)),
     )
     edges = (InteractionEdge(4, int(InteractionType.QUEUE_USE), LifecycleEdge.HOLD_ONSET, (1,)),)
     header = Header(frame_id="map")
@@ -112,8 +112,24 @@ def test_interaction_frame_flattens_members_with_offsets_roles_and_edges() -> No
     assert list(msg.member_offset) == [0, 3, 5]
     assert list(msg.member_id) == [1, 3, 2, 2, 5]
     assert list(msg.member_role) == [MembershipRole.PARTICIPANT, MembershipRole.QUEUED, MembershipRole.QUEUED, MembershipRole.PARTICIPANT, MembershipRole.PARTICIPANT]
+    assert list(msg.member_seat) == [2, -1, -1, -1, -1]
     (event,) = msg.events
     assert (event.interaction_id, event.interaction_type, event.event, list(event.participants)) == (4, int(InteractionType.QUEUE_USE), int(LifecycleEdge.HOLD_ONSET), [1])
+
+
+def test_membership_table_reports_the_seat_of_each_participant() -> None:
+    agents: dict[int, Any] = {aid: _Agent(aid) for aid in (1, 2)}
+    world = WorldKnowledge()
+    world.add_object(WorldObject(object_id="bench", type="bench", pose=Pose2D(), seats=[Pose2D(x=-1.0), Pose2D(x=1.0)]))
+    mgr = InteractionManager(RNG(0))
+    mgr.set_context(world_knowledge=world, agent_lookup=agents.get, visibility_lookup=lambda aid: set(agents) - {aid})
+    agents[1].state.pose = Pose2D(x=1.0, y=-2.0)
+    iid = _create(mgr, 1, InteractionType.SIT_ON, target="bench")
+    assert mgr.accept(2, iid)
+    (row,) = mgr.membership_table()
+    assert row.participants == (1,)
+    assert row.queue == (2,)
+    assert row.seats == (1,)
 
 
 def test_interaction_frame_of_an_empty_table_has_a_single_zero_offset() -> None:

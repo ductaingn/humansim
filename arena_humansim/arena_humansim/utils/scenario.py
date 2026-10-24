@@ -165,6 +165,18 @@ class WallConfig:
 
 
 @attrs.define
+class TeleportZoneConfig:
+    name: str = ""
+    destinations: list[str] = attrs.Factory(list)
+    entry: Pose2D = attrs.Factory(Pose2D)
+    wait: Pose2D = attrs.Factory(Pose2D)
+    hold: Pose2D = attrs.Factory(Pose2D)
+    footprint: list[Pose2D] = attrs.Factory(list)
+    open: bool = True
+    delay: float = 0.0
+
+
+@attrs.define
 class ObstacleBB:
     x_min: float = 0.0
     x_max: float = 0.0
@@ -195,6 +207,7 @@ class ScenarioConfig:
     agent_types: dict[str, AgentType] = attrs.Factory(dict)
     world_objects: list[WorldObjectConfig] = attrs.Factory(list)
     walls: list[WallConfig] = attrs.Factory(list)
+    teleport_zones: list[TeleportZoneConfig] = attrs.Factory(list)
     obstacles: list[ObstacleSceneConfig] = attrs.Factory(list)
     event_scripts: list[EventScript] = attrs.Factory(list)
 
@@ -465,6 +478,7 @@ def _structure_manual(
     flow = converter.structure(flow_raw, FlowScenarioConfig) if flow_raw else None
     world_objects = [converter.structure(wo, WorldObjectConfig) for wo in data.get("world_objects", [])]
     walls = [converter.structure(w, WallConfig) for w in data.get("walls", [])]
+    teleport_zones = [converter.structure(z, TeleportZoneConfig) for z in data.get("teleport_zones", [])]
     obstacles = [converter.structure(o, ObstacleSceneConfig) for o in data.get("obstacles", [])]
     event_scripts = [converter.structure(es, EventScript) for es in data.get("event_scripts", [])]
 
@@ -479,6 +493,7 @@ def _structure_manual(
         agent_types=merged_types,
         world_objects=world_objects,
         walls=walls,
+        teleport_zones=teleport_zones,
         obstacles=obstacles,
         event_scripts=event_scripts,
     )

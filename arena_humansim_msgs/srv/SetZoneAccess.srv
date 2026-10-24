@@ -1,0 +1,6 @@
+# Open or close teleport zones by name
+string[] name     # zone names
+bool[] open       # passable, one per name
+---
+bool success
+string message

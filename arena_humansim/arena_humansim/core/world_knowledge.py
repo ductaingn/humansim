@@ -20,6 +20,7 @@ class WorldObject:
     formation: FormationSpec | None = None
     interaction_radius: float | None = None
     seats: list[SeatPose] = attrs.Factory(list)
+    seat_conflicts: list[frozenset[int]] = attrs.Factory(list)
 
 
 class WorldKnowledge(Loggable):
@@ -30,6 +31,8 @@ class WorldKnowledge(Loggable):
         self._participants_counts: dict[str, int] = {}
 
     def add_object(self, obj: WorldObject) -> None:
+        if (previous := self._objects.get(obj.object_id)) is not None:
+            self._drop_type_entry(previous)
         self._objects[obj.object_id] = obj
         self._by_type.setdefault(obj.type, []).append(obj)
         self._logger.debug(f"World object added: {obj.object_id} ({obj.type})")
@@ -37,14 +40,17 @@ class WorldKnowledge(Loggable):
     def remove_object(self, object_id: str) -> WorldObject | None:
         obj = self._objects.pop(object_id, None)
         if obj is not None:
-            type_list = self._by_type.get(obj.type)
-            if type_list:
-                type_list[:] = [o for o in type_list if o.object_id != object_id]
-                if not type_list:
-                    del self._by_type[obj.type]
+            self._drop_type_entry(obj)
             self._queue_lengths.pop(object_id, None)
             self._participants_counts.pop(object_id, None)
         return obj
+
+    def _drop_type_entry(self, obj: WorldObject) -> None:
+        type_list = self._by_type.get(obj.type)
+        if type_list:
+            type_list[:] = [o for o in type_list if o.object_id != obj.object_id]
+            if not type_list:
+                del self._by_type[obj.type]
 
     def get(self, object_id: str) -> WorldObject | None:
         return self._objects.get(object_id)

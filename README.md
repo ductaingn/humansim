@@ -112,13 +112,29 @@ Every interaction follows a single flow: a BT `SeekNode` emits a SEEK command, I
 - Agents are routed from source to sink via weighted `sink_affinity`
 - TTL-based removal as fallback
 
-## Elevators
+## Teleport Zones
 
-`set_elevators` loads elevator cabins in the engine frame: a name, the cabin a ride arrives in, a doorway pose at the outer edge of the door, a queue pose clear of the door threshold where riders wait, a boarding pose inside whose heading riders hold, the footprint polygon and the door state. The engine never moves a cabin. The caller runs the ride, closes and opens doors through `set_elevator_doors` and moves the riders with `teleport_agents`. Cabins survive `reset` with `soft: true` and are dropped by a plain `reset` and by an empty `set_elevators`.
+A teleport zone is a floor area, in the engine frame, that pedestrians wait at, enter and leave by teleport: a name, the zones a teleport from it can land in, an entry pose at the outer edge of its opening facing in, a wait pose clear of the opening, a hold pose inside whose heading holders take, the footprint polygon, whether it is open, and a delay. The engine never moves a zone. `set_teleport_zones` replaces every zone, `set_zone_access` opens and closes zones by name, and `teleport_agents` moves pedestrians. Zones also come from the scenario's `teleport_zones:` list, poses and footprint points written as `{x: .., y: ..}` maps like wall ends, `open` defaulting to `true`, `delay` to `0` and `destinations` to none:
 
-A pedestrian whose navigation target lies in another free-space component of its global planner than itself is routed over the cabins: a cabin is boarded from the components of its doorway and boarding pose and lands in those of its destination cabin, and the route with the fewest rides wins, ties going to the cabin first by name. Only the first cabin of the route is kept, and the pedestrian plans to its queue pose instead of its target. Robots and pedestrians whose target lies in their own component plan as before. `navmesh` labels components on its edge graph, `astar` and `dijkstra` by a flood fill at `global_planner.resolution` 0.1 or finer, and coarser grids route no one over cabins.
+```yaml
+teleport_zones:
+  - name: lobby
+    destinations: [roof]
+    entry: {x: 4.0, y: 4.6}
+    wait: {x: 3.4, y: 4.6}
+    hold: {x: 5.2, y: 4.6, theta: 0.0}
+    footprint: [{x: 4.6, y: 4.0}, {x: 5.8, y: 4.0}, {x: 5.8, y: 5.2}, {x: 4.6, y: 5.2}]
+    open: false
+    delay: 2.0
+```
 
-A rider walks to the queue pose and within 1 m of it waits, desired speed 0, while the door is closed or the cabin has no free spot. The spots are a 0.7 m grid inside the footprint, 0.35 m clear of its edges, or the boarding pose when none fits. Once the door opens and a spot is free the rider takes the free spot farthest from the doorway, walks to it and stands still, velocity 0, from the moment it is within 0.3 m of it. A door that closes before the rider is inside the footprint sends it back to waiting, and a holding rider pushed out of the footprint while the door is open boards again. `teleport_agents` ends the ride, and on the next BT tick the pedestrian plans from its new pose to its current target, over further cabins when needed. A rider still waiting, boarding or holding `elevator_ride_timeout` seconds after it reached the queue pose or took its spot is released, that cabin is skipped for the same target, and it is routed again or plans as before.
+Zones survive `reset` with `soft: true` and are dropped by a plain `reset`, scenario zones included, and by an empty `set_teleport_zones`.
+
+A pedestrian whose navigation target lies in another free-space component of its global planner than itself is routed over the zones: a zone is entered from the components of its entry and hold pose and lands in those of each of its destinations, and the route with the fewest teleports wins, ties going to the zone first by name and then to its destination first in its list. Only the first zone of the route and the destination it takes are kept, and the pedestrian plans to the zone's wait pose instead of its target. Robots and pedestrians whose target lies in their own component plan to it directly. `navmesh` labels components on its edge graph, `astar` and `dijkstra` by a flood fill at `global_planner.resolution` 0.1 or finer, and coarser grids route no one over zones.
+
+A rider walks to the wait pose and within 1 m of it waits, desired speed 0, while the zone is closed or has no free spot. The spots are a 0.7 m grid inside the footprint, 0.35 m clear of its edges, or the hold pose when none fits. Once the zone is open and a spot is free the rider takes the free spot farthest from the entry, walks to it and stands still, velocity 0, from the moment it is within 0.3 m of it. A spot that a robot standing in the zone overlaps (closer than the sum of both radii) is not free, and a rider walking in whose spot a robot takes moves to another free spot or back to waiting. A zone that closes before the rider is inside the footprint sends it back to waiting, and a holding rider pushed out of the footprint while the zone is open walks in again.
+
+A zone with `delay` 0 or more teleports a rider itself once it has held for `delay` seconds, at once for 0: the rider lands in the destination of its route at the same offset from that zone's center as from its own, the center being the footprint centroid or the hold pose without a footprint, keeping its heading with velocity 0. A negative `delay` leaves the teleport to the caller. Either teleport ends the transfer, and on the next BT tick the pedestrian plans from its new pose to its current target, over further zones when needed. A rider still waiting, walking in or holding `zone_wait_timeout` seconds after it reached the wait pose or took its spot leaves that zone: it is routed over zones that avoid it when a route exists, and otherwise waits for the same zone again. A pedestrian is never steered at a target in another component while a zone route to it exists.
 
 ## Determinism & Replay
 
@@ -193,7 +209,7 @@ Config format and stage semantics: [`config/benchmark/README.md`](arena_humansim
 | `min_speed_for_heading` | `0.1` | Speed (m/s) below which an agent keeps its heading |
 | `arrival_r_enter`, `arrival_r_exit` | `0.15`, `0.30` | Radii (m) at which an agent latches onto its goal and releases it |
 | `arrival_tau_brake` | `0.15` | Braking time constant (s) of a latched agent, at least `dt` |
-| `elevator_ride_timeout` | `30.0` | Sim time (s) after reaching a cabin's queue pose or taking a spot before an unridden rider is released and routed again |
+| `zone_wait_timeout` | `30.0` | Sim time (s) after reaching a teleport zone's wait pose or taking a spot before a rider not yet teleported leaves the zone and is routed again |
 | `profile_phases`, `profile_interval` | `false`, `0` | Time the tick phases, log the profile every N ticks |
 | `publish_markers` | `0` | RViz markers: 0=off, 1=infrastructure+labels+interactions, 2=full |
 | `log_dir` | `""` | Directory for replay logs |
@@ -209,7 +225,7 @@ A `set_parameters` call on a running node is validated and stored at once and ta
 | `global_planner.inflation_radius`, `global_planner.resolution`, `global_planner.comfort_radius` | The planner rebuilds its grid or mesh from the current walls and drops cached paths |
 | `global_planner`, `local_planner` | The module is created on first use and gets the current walls and pool. An unknown module name is rejected at the set |
 | `local_planner.<key>` | Mean of a local planner param (`relaxation_time`, `repulsion_strength`, ...). It replaces the mean of the agent type and keeps its spread. `0` leaves the agent type's own value. Declared for the keys of the startup planner and of every planner selected through `local_planner` |
-| `waypoint_threshold`, `min_speed_for_heading`, `arrival_r_enter`, `arrival_r_exit`, `arrival_tau_brake`, `elevator_ride_timeout`, `force_local_planner`, `profile_phases`, `profile_interval` | The node re-reads them. `arrival_r_enter` must stay below `arrival_r_exit` |
+| `waypoint_threshold`, `min_speed_for_heading`, `arrival_r_enter`, `arrival_r_exit`, `arrival_tau_brake`, `zone_wait_timeout`, `force_local_planner`, `profile_phases`, `profile_interval` | The node re-reads them. `arrival_r_enter` must stay below `arrival_r_exit` |
 | `publish_markers` | The marker level changes. `0` deletes the published markers |
 | `rtf` | Master mode only, retimes the tick timer |
 
@@ -221,7 +237,7 @@ Re-seating moves every live agent that follows the defaults onto the current loc
 - `agent_states` (`AgentFrame`) - per-tick positions, velocities, radii, kinds, animation states and policy indices of the engine's own agents, one array per field
 - `agent_meta` (`AgentMeta`, latched) - policy table plus name, handedness, agent type, releasing source and release index per agent, sent when it changes and at every reset, stamped like the frame of the same tick
 - `agent_gestures` (`AgentGestures`, latched) - active gestures with their owner, sent when they change
-- `interactions` (`InteractionFrame`, latched) - every FORMING or ACTIVE interaction with its type, outcome, anchor object, arrival and hold state, duration and members (participants, then the queue in FIFO order, each with its `MembershipRole`), plus the lifecycle edges (`InteractionEvent`) fired on that tick. Sent when any of it changes or an edge fires, stamped like the frame of the same tick. An agent can be a member of several interactions
+- `interactions` (`InteractionFrame`, latched) - every FORMING or ACTIVE interaction with its type, outcome, anchor object, arrival and hold state, duration and members (participants, then the queue in FIFO order, each with its `MembershipRole` and object seat index, -1 for none), plus the lifecycle edges (`InteractionEvent`) fired on that tick. Sent when any of it changes or an edge fires, stamped like the frame of the same tick. An agent can be a member of several interactions
 - `viz_state` (`AgentViz`) - per-tick marker inputs while `publish_markers >= 1`, drawn into `viz` by `arena_humansim_viz_node` (started by the launch file, its `output_topic`, `offset_x` and `offset_y` parameters retarget and shift the markers at runtime, `robot_bodies: false` drops the body and heading of robot-kind agents). One message with `level: 0` clears the markers when the level drops to 0. The engine builds the per-tick message only while the topic has a subscriber, and `arena_humansim_viz_node` subscribes only while its output topic has one (checked once per second)
 - `viz`, `viz_static/<bucket>` (`MarkerArray`) - infrastructure and module markers drawn by the engine itself. Module markers are drawn only while `viz` has a subscriber
 
@@ -233,11 +249,11 @@ Re-seating moves every live agent that follows the defaults onto the current loc
 - `spawn_agents`, `remove_agents` — direct agent control
 - `add_source`, `remove_source`, `add_sink`, `remove_sink` — flow control
 - `add_walls`, `remove_walls` — dynamic obstacles
-- `set_elevators` - replace the elevator cabins, an empty list removes them all. Duplicate names or a destination naming no cabin reject the call
-- `set_elevator_doors` - open or close cabin doors by name, an unknown name rejects the call
-- `teleport_agents` - move agents to new poses with zero velocity, ending the ride of a rider. An unknown id rejects the call and moves no one
+- `set_teleport_zones` - replace the teleport zones, an empty list removes them all. Duplicate names or a destination naming no zone reject the call
+- `set_zone_access` - open or close teleport zones by name, an unknown name rejects the call
+- `teleport_agents` - move agents to new poses with zero velocity, ending a rider's transfer. An unknown id rejects the call and moves no one
 - `set_flow` — bulk configure sources, sinks, walls
-- `notify_stimulus` - drive a need on one agent (or `-1` for all) after its reaction time
+- `notify_stimulus` - drive a need on one agent (or `-1` for all) after its reaction time, a broadcast level also seeds agents spawned later
 - `reset` - clear all simulation state, or with `soft: true` keep it and only apply stored params, re-seat agents, and prune unused planners
 
 ## Development

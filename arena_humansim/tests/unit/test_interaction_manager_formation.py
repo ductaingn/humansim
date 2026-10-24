@@ -317,6 +317,118 @@ def test_seated_agent_parks_on_its_seat_from_reach() -> None:
     assert mgr.parked() == {1: seat}
 
 
+def test_stopping_an_object_releases_its_sitter_and_spares_other_objects() -> None:
+    wk = WorldKnowledge()
+    for object_id, x in (("chair", 5.0), ("stool", -5.0)):
+        wk.add_object(WorldObject(object_id=object_id, type=object_id, pose=Pose2D(x=x), seats=[Pose2D(x=x, theta=-1.5)]))
+    agents = {1: _FakeAgent(state=_FakeState(agent_id=1, pose=Pose2D(x=5.0, y=-0.7))), 2: _FakeAgent(state=_FakeState(agent_id=2, pose=Pose2D(x=-5.0, y=-0.7)))}
+    mgr = _mk_manager(agents, world=wk)
+    chair = _create(mgr, 1, InteractionType.SIT_ON, target="chair")
+    stool = _create(mgr, 2, InteractionType.SIT_ON, target="stool")
+    for iid in (chair, stool):
+        mgr.interactions[iid].outcome = InteractionOutcome.ACTIVE
+    mgr.update({}, dt=0.05)
+    assert set(mgr.parked()) == {1, 2}
+    mgr.stop_object("chair")
+    assert mgr.interactions[chair].outcome == InteractionOutcome.INTERRUPTED
+    assert mgr.interactions[stool].outcome == InteractionOutcome.ACTIVE
+    assert set(mgr.parked()) == {2}
+
+
+def test_stopping_every_object_releases_every_sitter() -> None:
+    wk = WorldKnowledge()
+    wk.add_object(WorldObject(object_id="chair", type="chair", pose=Pose2D(x=5.0), seats=[Pose2D(x=5.0, theta=-1.5)]))
+    agents = {1: _FakeAgent(state=_FakeState(agent_id=1, pose=Pose2D(x=5.0, y=-0.7)))}
+    mgr = _mk_manager(agents, world=wk)
+    iid = _create(mgr, 1, InteractionType.SIT_ON, target="chair")
+    mgr.interactions[iid].outcome = InteractionOutcome.ACTIVE
+    mgr.update({}, dt=0.05)
+    mgr.stop_object()
+    assert mgr.interactions[iid].outcome == InteractionOutcome.INTERRUPTED
+    assert mgr.parked() == {}
+
+
+def _bench(conflicts: list[frozenset[int]]) -> WorldKnowledge:
+    wk = WorldKnowledge()
+    seats = [Pose2D(x=float(x), theta=-1.5) for x in range(len(conflicts))]
+    wk.add_object(WorldObject(object_id="bench", type="bench", pose=Pose2D(x=1.0), seats=seats, seat_conflicts=conflicts))
+    return wk
+
+
+def _seek(mgr: InteractionManager, agent_id: int, itype: InteractionType = InteractionType.SIT_ON) -> int | None:
+    return mgr.seek(agent_id, SeekSpec(interaction_type=itype, target="bench"))
+
+
+def test_a_second_sitter_takes_a_free_seat_in_its_own_interaction() -> None:
+    agents = {aid: _FakeAgent(state=_FakeState(agent_id=aid, pose=Pose2D(x=float(aid - 1), y=-2.0))) for aid in (1, 2)}
+    mgr = _mk_manager(agents, world=_bench([frozenset(), frozenset()]))
+    first, second = _seek(mgr, 1), _seek(mgr, 2)
+    assert first is not None and second is not None and first != second
+    assert mgr.held_seats("bench") == {0, 1}
+    assert mgr.interactions[second].participants == [2]
+
+
+def test_a_sitter_skips_the_seat_overlapping_a_held_one() -> None:
+    agents = {1: _FakeAgent(state=_FakeState(agent_id=1, pose=Pose2D(x=0.0, y=-2.0))), 2: _FakeAgent(state=_FakeState(agent_id=2, pose=Pose2D(x=1.0, y=-2.0)))}
+    mgr = _mk_manager(agents, world=_bench([frozenset({1}), frozenset({0, 2}), frozenset({1})]))
+    _seek(mgr, 1)
+    second = _seek(mgr, 2)
+    assert second is not None
+    assert mgr.interactions[second].contract.formation.seat_index_of(2) == 2
+    assert mgr.held_seats("bench") == {0, 2}
+
+
+def test_a_sitter_queues_when_no_seat_fits() -> None:
+    agents = {aid: _FakeAgent(state=_FakeState(agent_id=aid, pose=Pose2D(x=float(aid - 1), y=-2.0))) for aid in (1, 2)}
+    mgr = _mk_manager(agents, world=_bench([frozenset({1}), frozenset({0})]))
+    first = _seek(mgr, 1)
+    assert _seek(mgr, 2) == first
+    assert mgr.interactions[first].contract.queue == [2]
+    assert mgr.held_seats("bench") == {0}
+
+
+def test_a_lier_waits_off_the_furniture_until_the_overlapping_sitter_leaves() -> None:
+    agents = {aid: _FakeAgent(state=_FakeState(agent_id=aid, pose=Pose2D(x=0.0, y=-0.5))) for aid in (1, 2)}
+    mgr = _mk_manager(agents, world=_bench([frozenset({1}), frozenset({0})]))
+    sit = _seek(mgr, 1)
+    lie = _seek(mgr, 2, InteractionType.LIE_ON)
+    assert sit is not None and lie is not None and sit != lie
+    formation = mgr.interactions[lie].contract.formation
+    assert formation.seat_index_of(2) is None
+    assert not formation.arrived(2)
+    mgr.stop(1, sit)
+    mgr.update({}, dt=0.05)
+    assert formation.seat_index_of(2) is not None
+    assert mgr.held_seats("bench") == {formation.seat_index_of(2)}
+
+
+def test_a_participant_beyond_the_fitting_seats_queues() -> None:
+    agents = {aid: _FakeAgent(state=_FakeState(agent_id=aid, pose=Pose2D(x=0.0, y=-2.0))) for aid in (1, 2, 3)}
+    mgr = _mk_manager(agents, world=_bench([frozenset({1}), frozenset({0, 2}), frozenset({1})]))
+    iid = _create(mgr, 1, InteractionType.SIT_ON, target="bench", max_participants=3)
+    assert mgr.accept(2, iid)
+    assert mgr.accept(3, iid)
+    interaction = mgr.interactions[iid]
+    assert interaction.participants == [1, 2]
+    assert interaction.contract.queue == [3]
+    assert mgr.held_seats("bench") == {0, 2}
+
+
+def test_a_queued_sitter_takes_a_freed_seat_before_a_newcomer() -> None:
+    agents = {aid: _FakeAgent(state=_FakeState(agent_id=aid, pose=Pose2D(x=0.0 if aid == 1 else 1.0, y=-2.0))) for aid in (1, 2, 3, 4)}
+    mgr = _mk_manager(agents, world=_bench([frozenset(), frozenset()]))
+    first = _seek(mgr, 1)
+    second = _seek(mgr, 2)
+    assert first is not None and second is not None
+    assert _seek(mgr, 3) == second
+    mgr.stop(1, first)
+    assert _seek(mgr, 4) == second
+    mgr.update({}, dt=0.05)
+    seat_of = {aid: i.contract.formation.seat_index_of(aid) for i in mgr.interactions.values() if i.outcome == InteractionOutcome.ACTIVE for aid in i.participants}
+    assert seat_of == {2: 1, 3: 0}
+    assert mgr.interactions[second].contract.queue == [4]
+
+
 def test_posture_waits_for_arrival() -> None:
     """A participant is ACTIVE while still walking up, the widened footprint must not apply yet."""
     wk = WorldKnowledge()
@@ -398,7 +510,7 @@ def test_queued_member_gets_no_seat() -> None:
     """Seats are for sitters: a queued agent must not be routed onto the furniture."""
     wk = WorldKnowledge()
     seats = [Pose2D(x=5.0, y=1.0, theta=0.0), Pose2D(x=5.0, y=-1.0, theta=0.0)]
-    wk.add_object(WorldObject(object_id="bench", type="bench", pose=Pose2D(x=5.0, y=0.0, theta=0.0), seats=seats))
+    wk.add_object(WorldObject(object_id="bench", type="bench", pose=Pose2D(x=5.0, y=0.0, theta=0.0), seats=seats, seat_conflicts=[frozenset({1}), frozenset({0})]))
     agents = {aid: _FakeAgent(state=_FakeState(agent_id=aid, pose=Pose2D(x=5.0, y=6.0))) for aid in (1, 2)}
     mgr = _mk_manager(agents, world=wk)
     iid = _create(mgr, 1, InteractionType.SIT_ON, target="bench")
@@ -407,7 +519,8 @@ def test_queued_member_gets_no_seat() -> None:
     assert 2 in mgr.interactions[iid].contract.queue
     _, formation_targets, _ = mgr.update({}, dt=0.05)
     assert 2 not in formation_targets
-    assert mgr.interactions[iid].contract.formation.occupied_slots() == [formation_targets[1]]
+    assert mgr.interactions[iid].contract.formation.slot_of(1) == formation_targets[1]
+    assert mgr.held_seats("bench") == {0}
 
 
 def test_promotion_from_the_queue_claims_the_freed_seat() -> None:

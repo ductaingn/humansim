@@ -39,7 +39,7 @@ A subclass implements only `_has_map` and `_plan`. The base class owns everythin
 - `_sees` is optional, default a ray cast against the walls. `navmesh` overrides it with its comfort-radius line of sight, the same test its `plan` tries before searching.
 - `snap_terminals` is optional, default `snap_terminal` per pose. `navmesh` checks all poses' wall clearance in one call first.
 - `_nearest_reachable` is optional, default `None`. It returns the point closest to an unreachable target that the start can still reach.
-- `components` is optional, default an empty set per pose. It returns the free-space components a pose can walk into, two poses being mutually reachable when their sets meet, and the elevator routing reads it. `navmesh` snaps each pose off the walls and returns the edge graph components of its triangle, `astar` and `dijkstra` the flood fill label of the nearest free cell at `resolution` 0.1 or finer. Labels follow every `set_walls`.
+- `components` is optional, default an empty set per pose. It returns the free-space components a pose can walk into, two poses being mutually reachable when their sets meet, and the teleport zone routing reads it. `navmesh` snaps each pose off the walls and returns the edge graph components of its triangle, `astar` and `dijkstra` the flood fill label of the nearest free cell at `resolution` 0.1 or finer. Labels follow every `set_walls`.
 - `get_cached_goals` is how the rest of the pipeline (local planner, markers) reads the planner state without re-triggering work.
 - `get_cached_paths` is optional, only used for visualization.
 - `WallAware.set_walls(segments)` invalidates any grid / graph caches through `_forget_paths`.

@@ -170,7 +170,24 @@ Tunes stack by owner and fold per field in a fixed order: type condition first, 
 
 ### Stimuli
 
-The `notify_stimulus` service sets the need named by `stimulus` to `100 * intensity` after the agent's sampled `reaction_time`, and fires an event of the same name on the event bus. Only agents whose type declares that need react to the value, so a `transitions` entry keyed on it (e.g. `when: {alarm: {above: 50.0}}`) preempts the current sequence. `agent_id: -1` broadcasts to every agent.
+The `notify_stimulus` service sets the need named by `stimulus` to `100 * intensity` after the agent's sampled `reaction_time`, and, for an intensity above 0, fires an event of the same name on the event bus (an intensity of 0 only lowers the need, so an autonomous step's `until:` does not exit when a stimulus goes away). Only agents whose type declares that need react to the value, so a `transitions` entry keyed on it (e.g. `when: {alarm: {above: 50.0}}`) preempts the current sequence. `agent_id: -1` broadcasts to every agent and is also remembered as world state: an agent spawned later starts its declared needs from the last broadcast intensity of each stimulus (no reaction delay, no event). A full `reset` forgets these levels.
+
+World mechanisms use this channel (Arena adapter, `human:=arena`): every discrete or predicate change of a door, elevator, signal, schedule, gate, plate or sound arrives as the broadcast pair `<entity>.<field>==<old>` at 0 and `<entity>.<field>==<new>` at 1, e.g. `elev_a.cabin_door==open`. Declare such a need with `initial` and `decay_rate` pinned to 0 and key a transition on `above: 50` to wait for a mechanism state. A ped teleported by an elevator gets the per-agent stimulus `teleported` at 1. See `arena_simulation_setup/AUTHORING.md` (Pedestrians and world mechanisms).
+
+```yaml
+needs:
+  "elev_a.cabin_door==open":
+    initial: {mean: 0.0, clip_low: 0.0, clip_high: 0.0}
+    decay_rate: {mean: 0.0, clip_low: 0.0, clip_high: 0.0}
+sequences:
+  wait:
+    steps:
+      stand: {duration: {mean: 3600.0}}
+    then: wait
+    transitions:
+      - when: {"elev_a.cabin_door==open": {above: 50.0}}
+        goto: board
+```
 
 ### `steps`
 

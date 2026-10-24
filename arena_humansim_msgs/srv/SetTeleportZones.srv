@@ -1,0 +1,5 @@
+# Replace every teleport zone, an empty list removes them all
+arena_humansim_msgs/TeleportZone[] zones
+---
+bool success
+string message
