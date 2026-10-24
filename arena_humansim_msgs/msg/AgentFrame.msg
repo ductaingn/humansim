@@ -15,3 +15,4 @@ float64[] gait_phase         # cycle phase in rad, 0 = not provided
 float64[] gait_cadence       # cycle rate in Hz, 0 = unknown
 int32[] interaction_id       # active interaction, -1 = none or gestures off
 uint8[] interaction_type     # InteractionType, valid when interaction_id >= 0
+float32[] support_height     # surface the agent sits or lies on, m above its floor, -1 = on its feet

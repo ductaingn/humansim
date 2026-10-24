@@ -5,7 +5,7 @@ import math
 import attrs
 
 from arena_humansim.utils.loggable import Loggable
-from arena_humansim.utils.types import AnchorKind, FormationSpec, Pose2D
+from arena_humansim.utils.types import AnchorKind, FormationSpec, Pose2D, SeatPose
 
 __all__ = ["AnchorKind", "FormationSpec", "WorldKnowledge", "WorldObject"]
 
@@ -19,7 +19,7 @@ class WorldObject:
     satisfies: dict[str, float] = attrs.Factory(dict)
     formation: FormationSpec | None = None
     interaction_radius: float | None = None
-    seats: list[Pose2D] = attrs.Factory(list)
+    seats: list[SeatPose] = attrs.Factory(list)
 
 
 class WorldKnowledge(Loggable):

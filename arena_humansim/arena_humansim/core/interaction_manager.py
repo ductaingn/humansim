@@ -32,6 +32,7 @@ from arena_humansim.utils.types import (
     InteractionOutcome,
     InteractionState,
     Pose2D,
+    SeatPose,
     SeekSpec,
     pose_distance,
 )
@@ -595,6 +596,22 @@ class InteractionManager(Loggable):
                 continue
             return InteractionType(interaction.type).kind.posture
         return "standing"
+
+    def support_height(self, agent_id: int) -> float | None:
+        """Height of the surface the arrived agent sits or lies on, above its floor, None while on its feet.
+
+        Only explicit seats know their surface: an agent on a generated slot or an unmeasured seat stays on its feet.
+        """
+        for iid, role in self._agent_membership.get(agent_id, {}).items():
+            interaction = self.interactions.get(iid)
+            if role != MembershipRole.PARTICIPANT or interaction is None or interaction.outcome != InteractionOutcome.ACTIVE:
+                continue
+            if InteractionType(interaction.type).kind.posture == "standing" or interaction.contract.formation is None:
+                continue
+            seat = interaction.contract.formation.seat_of(agent_id)
+            if isinstance(seat, SeatPose) and seat.height is not None:
+                return seat.height
+        return None
 
     def active_interaction(self, agent_id: int) -> tuple[int, int] | None:
         """(interaction_id, interaction_type) of the agent's ACTIVE participant interaction, or None."""

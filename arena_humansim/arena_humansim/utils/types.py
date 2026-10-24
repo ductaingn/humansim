@@ -52,6 +52,13 @@ class Pose2D:
     theta: float = 0.0
 
 
+@attrs.define
+class SeatPose(Pose2D):
+    """An explicit slot on a piece of furniture (seat, bed): where the agent is parked, plus the surface it rests on."""
+
+    height: float | None = None  # surface height above the object's floor, m, None = not measured
+
+
 def pose_distance(a: Pose2D, b: Pose2D) -> float:
     return math.hypot(a.x - b.x, a.y - b.y)
 

@@ -116,6 +116,7 @@ from arena_humansim.utils.types import (
     InteractionOutcome,
     InteractionState,
     Pose2D,
+    SeatPose,
     SeekSpec,
     Segments,
     Shape,
@@ -203,6 +204,15 @@ _CMD_LABEL_IDX = {c: i for i, c in enumerate(CommandType)}
 _INTR_LABEL_IDX = len(_CMD_LABELS) - 1
 
 _LATCHED_QOS = QoSProfile(depth=1, reliability=ReliabilityPolicy.RELIABLE, durability=DurabilityPolicy.TRANSIENT_LOCAL)
+
+
+def _seats(info: WorldObjectInfoMsg) -> list[SeatPose]:
+    """The object's seats with their surface heights, a height missing or NaN left unmeasured."""
+    heights = list(info.seat_heights) if len(info.seat_heights) == len(info.seats) else [math.nan] * len(info.seats)
+    return [
+        SeatPose(x=float(s.x), y=float(s.y), theta=float(s.theta), height=None if math.isnan(h) else float(h))
+        for s, h in zip(info.seats, heights, strict=True)
+    ]
 
 
 def _flat(code: str, values: np.ndarray) -> array.array:
@@ -2420,6 +2430,8 @@ class AgentManager(Node):
         active = [im.active_interaction(aid) for aid in pool.agent_ids[rows].tolist()] if self._gesture_mode == GESTURE_ENABLED else [None] * len(rows)
         msg.interaction_id = array.array("i", [a[0] if a is not None else -1 for a in active])
         msg.interaction_type = array.array("B", [int(a[1]) if a is not None else 0 for a in active])
+        heights = [im.support_height(aid) if a is not None else None for aid, a in zip(pool.agent_ids[rows].tolist(), active, strict=True)]
+        msg.support_height = array.array("f", [-1.0 if h is None else h for h in heights])
         return msg
 
     def _publish_agent_meta(self, header: Header) -> None:
@@ -3288,7 +3300,7 @@ class AgentManager(Node):
                     satisfies=satisfies,
                     interaction_radius=interaction_radius,
                     formation=formation,
-                    seats=[Pose2D(x=float(s.x), y=float(s.y), theta=float(s.theta)) for s in info.seats],
+                    seats=_seats(info),
                 )
             )
             added += 1

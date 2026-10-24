@@ -25,6 +25,7 @@ from arena_humansim.utils.types import (
     InteractionOutcome,
     InteractionState,
     Pose2D,
+    SeatPose,
     SeekSpec,
 )
 
@@ -329,6 +330,21 @@ def test_posture_waits_for_arrival() -> None:
     assert mgr.posture_of(1) == "standing"
     agents[1].state.pose = Pose2D(x=5.0, y=-0.5)
     assert mgr.posture_of(1) == "prone"
+
+
+def test_support_height_is_the_seat_surface_once_arrived() -> None:
+    wk = WorldKnowledge()
+    wk.add_object(WorldObject(object_id="bed", type="bed", pose=Pose2D(x=5.0, y=0.0), seats=[SeatPose(x=5.0, y=0.0, height=0.62)]))
+    wk.add_object(WorldObject(object_id="stool", type="stool", pose=Pose2D(x=-5.0, y=0.0), seats=[SeatPose(x=-5.0, y=0.0)]))
+    agents = {1: _FakeAgent(state=_FakeState(agent_id=1, pose=Pose2D(x=5.0, y=-8.0))), 2: _FakeAgent(state=_FakeState(agent_id=2, pose=Pose2D(x=-5.0, y=0.1)))}
+    mgr = _mk_manager(agents, world=wk)
+    for agent_id, itype, target in ((1, InteractionType.LIE_ON, "bed"), (2, InteractionType.SIT_ON, "stool")):
+        mgr.interactions[_create(mgr, agent_id, itype, target=target)].outcome = InteractionOutcome.ACTIVE
+    mgr.update({}, dt=0.05)
+    assert mgr.support_height(1) is None  # still walking to the bed
+    agents[1].state.pose = Pose2D(x=5.0, y=-0.5)
+    assert mgr.support_height(1) == 0.62
+    assert mgr.support_height(2) is None  # seated, but the stool's surface was never measured
 
 
 def test_posture_of_follows_the_active_interaction_kind() -> None:
