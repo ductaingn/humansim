@@ -210,10 +210,7 @@ _LATCHED_QOS = QoSProfile(depth=1, reliability=ReliabilityPolicy.RELIABLE, durab
 def _seats(info: WorldObjectInfoMsg) -> list[SeatPose]:
     """The object's seats with their surface heights, a height missing or NaN left unmeasured."""
     heights = list(info.seat_heights) if len(info.seat_heights) == len(info.seats) else [math.nan] * len(info.seats)
-    return [
-        SeatPose(x=float(s.x), y=float(s.y), theta=float(s.theta), height=None if math.isnan(h) else float(h))
-        for s, h in zip(info.seats, heights, strict=True)
-    ]
+    return [SeatPose(x=float(s.x), y=float(s.y), theta=float(s.theta), height=None if math.isnan(h) else float(h)) for s, h in zip(info.seats, heights, strict=True)]
 
 
 def _flat(code: str, values: np.ndarray) -> array.array:
