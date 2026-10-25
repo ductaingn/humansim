@@ -188,6 +188,16 @@ def test_separate_kernel_moves_only_movable_agents_and_keeps_separating_velocity
     assert vel[2:].tolist() == [[1.0, 0.0], [0.0, 0.0], [1.0, 0.0], [-1.0, 0.0]]
 
 
+def test_separate_kernel_never_moves_an_agent_off_an_immovable_partner() -> None:
+    pos = np.array([[0.0, 0.0], [0.3, 0.0], [5.0, 0.0], [5.3, 0.0]])
+    vel = np.array([[1.0, 0.0], [-1.0, 0.0], [-1.0, 0.0], [1.0, 0.0]])
+    movable = np.array([True, False, True, False])
+    pairs = np.array([[0, 1], [2, 3]], dtype=np.int64)
+    _separate_both(pos, vel, np.full(4, 0.25), movable, pairs, np.zeros(4), np.zeros(4))
+    assert pos.tolist() == [[0.0, 0.0], [0.3, 0.0], [5.0, 0.0], [5.3, 0.0]]
+    assert vel == pytest.approx(np.array([[0.0, 0.0], [-1.0, 0.0], [-1.0, 0.0], [1.0, 0.0]]), abs=1e-12)
+
+
 def test_resolve_far_apart_agents_away_from_walls_reports_nothing(pool_empty: Callable[..., AgentPool], agent_factory: Callable[..., BaseAgent]) -> None:
     resolver = WallProjectionResolver(margin=_MARGIN)
     resolver.set_walls([((-5.0, -2.0), (5.0, -2.0))])

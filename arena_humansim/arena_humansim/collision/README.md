@@ -24,7 +24,7 @@ class CollisionResolver(WallAware, Loggable, ABC):
 
 ## `wall_projection` semantics
 
-Agent contact first. Every pair closer than the sum of its radii is pushed apart along the center line by the overlap, split evenly, and the closing component of the pair's relative velocity is removed. Three Gauss-Seidel passes run over the pairs in contact at the start of the tick, in agent id order. A non-autonomous agent (`policy_idx == -1`, e.g. an externally driven robot) is immovable and its partner takes the whole push. Residual overlap in a jam carries over and shrinks over the next ticks.
+Agent contact first. Every pair closer than the sum of its radii is pushed apart along the center line by the overlap, split evenly, and the closing component of the pair's relative velocity is removed. Three Gauss-Seidel passes run over the pairs in contact at the start of the tick, in agent id order. A non-autonomous agent (`policy_idx == -1`, e.g. an externally driven robot) is immovable, and contact with it never moves its partner: the partner keeps its position and only loses its own velocity toward the immovable agent, so a robot cannot push a pedestrian out of place. Residual overlap in a jam carries over and shrinks over the next ticks.
 
 Walls second. For each agent within `radius + margin` of a wall segment:
 

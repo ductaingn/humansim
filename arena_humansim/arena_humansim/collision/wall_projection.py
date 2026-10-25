@@ -193,18 +193,24 @@ def _separate_kernel(pos: np.ndarray, vel: np.ndarray, radius: np.ndarray, movab
             else:
                 nx = 1.0
                 ny = 0.0
-            wi = mi / total
-            wj = mj / total
-            pos[i, 0] += wi * pen * nx
-            pos[i, 1] += wi * pen * ny
-            pos[j, 0] -= wj * pen * nx
-            pos[j, 1] -= wj * pen * ny
+            if total == 1.0:
+                m = i if mi == 1.0 else j
+                s = 1.0 if mi == 1.0 else -1.0
+                vn = (vel[m, 0] * nx + vel[m, 1] * ny) * s
+                if vn < 0.0:
+                    vel[m, 0] -= vn * s * nx
+                    vel[m, 1] -= vn * s * ny
+                continue
+            pos[i, 0] += 0.5 * pen * nx
+            pos[i, 1] += 0.5 * pen * ny
+            pos[j, 0] -= 0.5 * pen * nx
+            pos[j, 1] -= 0.5 * pen * ny
             rv = (vel[i, 0] - vel[j, 0]) * nx + (vel[i, 1] - vel[j, 1]) * ny
             if rv < 0.0:
-                vel[i, 0] -= wi * rv * nx
-                vel[i, 1] -= wi * rv * ny
-                vel[j, 0] += wj * rv * nx
-                vel[j, 1] += wj * rv * ny
+                vel[i, 0] -= 0.5 * rv * nx
+                vel[i, 1] -= 0.5 * rv * ny
+                vel[j, 0] += 0.5 * rv * nx
+                vel[j, 1] += 0.5 * rv * ny
 
 
 def _resolve_grid(grid: WallGrid, pos: np.ndarray, vel: np.ndarray, radius: np.ndarray, margin: float, offset: np.ndarray, theta: np.ndarray) -> np.ndarray:

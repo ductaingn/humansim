@@ -232,7 +232,7 @@ def test_separating_pair_keeps_velocity(pool_empty: Callable[..., AgentPool], ag
     assert pool.vel[1] == pytest.approx((1.0, 0.0), abs=1e-12)
 
 
-def test_non_autonomous_agent_is_not_pushed(pool_empty: Callable[..., AgentPool], agent_factory: Callable[..., BaseAgent]) -> None:
+def test_contact_with_a_non_autonomous_agent_moves_neither(pool_empty: Callable[..., AgentPool], agent_factory: Callable[..., BaseAgent]) -> None:
     pool = _contact_pool(pool_empty, agent_factory, [(0.0, 0.0), (0.3, 0.0)], [True, False])
     pool.vel[0] = (1.0, 0.0)
     pool.vel[1] = (-0.5, 0.0)
@@ -241,8 +241,8 @@ def test_non_autonomous_agent_is_not_pushed(pool_empty: Callable[..., AgentPool]
 
     assert pool.pos[1] == pytest.approx((0.3, 0.0), abs=1e-12)
     assert pool.vel[1] == pytest.approx((-0.5, 0.0), abs=1e-12)
-    assert pool.pos[0] == pytest.approx((-0.2, 0.0), abs=1e-12)
-    assert pool.vel[0] == pytest.approx((-0.5, 0.0), abs=1e-12)
+    assert pool.pos[0] == pytest.approx((0.0, 0.0), abs=1e-12)
+    assert pool.vel[0] == pytest.approx((0.0, 0.0), abs=1e-12)
 
 
 def test_two_non_autonomous_agents_stay_overlapping(pool_empty: Callable[..., AgentPool], agent_factory: Callable[..., BaseAgent]) -> None:
