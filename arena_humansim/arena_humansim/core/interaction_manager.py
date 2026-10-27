@@ -19,7 +19,7 @@ from arena_humansim.core.formation import (
     ObjectAnchor,
     PoseAnchor,
 )
-from arena_humansim.core.interaction_kinds import AccessKind, HandleKind, InteractionType, MembershipRole
+from arena_humansim.core.interaction_kinds import AccessKind, ClipSet, HandleKind, InteractionType, MembershipRole
 from arena_humansim.utils import RNG
 from arena_humansim.utils.loggable import Loggable
 from arena_humansim.utils.types import (
@@ -58,6 +58,8 @@ _UNSET: Any = object()
 
 _HOLDING = "_holding"
 _SEATED = "_seated"
+_CLIP_SET = "_clip_set"
+_HEADINGS = ("heading_a", "heading_b")
 _DRIFT_LATCH_FRACTION = 0.5
 
 
@@ -202,8 +204,34 @@ class InteractionManager(Loggable):
 
     def _contact_params(self, interaction: InteractionState, formation_type: str, params: dict[str, Any]) -> dict[str, Any]:
         if formation_type == "dyad" and self.is_contact(interaction) and self._contact_mode == CONTACT_LOCOMOTION_ONLY:
-            return {**params, "separation": self._standing_distance}
+            return {**{k: v for k, v in params.items() if k not in _HEADINGS}, "separation": self._standing_distance}
         return params
+
+    def clip_set(self, interaction: InteractionState) -> ClipSet | None:
+        """The kind's clip set this interaction plays, drawn once from its creator's stream, None for kinds without clips."""
+        sets = InteractionType(interaction.type).kind.clips
+        if not sets:
+            return None
+        index = interaction.state.get(_CLIP_SET)
+        if index is None:
+            creator = interaction.participants[0] if interaction.participants else 0
+            index = int(self.rng_manager.get_agent_substream(creator, "clip_set").integers(len(sets))) if len(sets) > 1 else 0
+            interaction.state[_CLIP_SET] = index
+        return sets[index]
+
+    def role_clip(self, interaction: InteractionState, agent_id: int) -> str | None:
+        """Clip of the participant's role in the interaction's clip set (roles in join order), None when it has none."""
+        clips = self.clip_set(interaction)
+        if clips is None or agent_id not in interaction.participants:
+            return None
+        return clips.role(interaction.participants.index(agent_id))
+
+    def _stance(self, interaction: InteractionState, formation_type: str) -> dict[str, float]:
+        """Dyad separation and headings of the interaction's clip set, empty when the set leaves the default."""
+        clips = self.clip_set(interaction)
+        if formation_type != "dyad" or clips is None or clips.separation is None:
+            return {}
+        return {"separation": clips.separation, _HEADINGS[0]: clips.headings[0], _HEADINGS[1]: clips.headings[1]}
 
     def _emit(self, interaction: InteractionState, edge: LifecycleEdge, participants: list[int] | None = None) -> None:
         members = interaction.participants if participants is None else participants
@@ -1027,7 +1055,7 @@ class InteractionManager(Loggable):
         if anchor is None:
             return None
 
-        params = self._contact_params(interaction, active_spec.type, dict(active_spec.params or {}))
+        params = self._contact_params(interaction, active_spec.type, {**dict(active_spec.params or {}), **self._stance(interaction, active_spec.type)})
         seat_object: str | None = None
         if interaction.object_id is not None and active_spec.type == "cluster" and self._seat_count(interaction.object_id):
             seat_object = interaction.object_id

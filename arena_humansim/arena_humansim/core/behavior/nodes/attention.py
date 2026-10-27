@@ -446,8 +446,11 @@ class AttentionNode(py_trees.behaviour.Behaviour):
         xy = self._clip_render_target()
         x, y = xy if xy is not None else (0.0, 0.0)
         override = xy is not None
-        if self._clip_published is None or (self._clip_published.x, self._clip_published.y, self._clip_published.render_pose_override) != (x, y, override):
-            self._clip_published = GestureIntent(CLIP_SLOT, x, y, clip=clip.name, render_pose_override=override)
+        name = clip.name
+        if clip.by_role and interaction is not None and im is not None:
+            name = im.role_clip(interaction, self._agent.state.agent_id) or name
+        if self._clip_published is None or (self._clip_published.x, self._clip_published.y, self._clip_published.render_pose_override, self._clip_published.clip) != (x, y, override, name):
+            self._clip_published = GestureIntent(CLIP_SLOT, x, y, clip=name, render_pose_override=override)
 
     def _published(self) -> list[GestureIntent]:
         out = [ch.published for ch in self._channels if ch.published is not None]

@@ -259,10 +259,11 @@ def _expand_interaction_step(
 
 
 def _with_default_clip(attention: AttentionDef | None, clip: str) -> AttentionDef | None:
-    """The interaction kind's clip plays while the agent is a participant, unless the author set one."""
+    """The interaction kind's clip plays while the agent is a participant, unless the author set one: the clip of
+    the member's role in the clip set the interaction drew, ``clip`` until it is bound."""
     if not clip or (attention is not None and attention.clip is not None):
         return attention
-    return attrs.evolve(attention or AttentionDef(), clip=ClipDef(name=clip, when="bound"))
+    return attrs.evolve(attention or AttentionDef(), clip=ClipDef(name=clip, when="bound", by_role=True))
 
 
 def _expand_pure_wait_step(

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import enum
 import functools
+import math
 from typing import TYPE_CHECKING
 
 import attrs
@@ -97,6 +98,31 @@ class ContractDefaults:
 
 
 @attrs.frozen
+class ClipSet:
+    """Clips one interaction plays, one per role, and the dyad stance they were made in.
+
+    Members take the roles in join order, cycling when there are more members than roles, so a one-role set plays the
+    same clip on everyone. ``separation`` (m) and ``headings`` (rad, each role's turn off facing its partner) replace
+    the kind's default dyad placement, contact clips only touch where they were made to.
+    """
+
+    roles: tuple[str, ...]
+    separation: float | None = None
+    headings: tuple[float, float] = (0.0, 0.0)
+
+    def role(self, index: int) -> str:
+        return self.roles[index % len(self.roles)]
+
+    @classmethod
+    def pair(cls, a: str, b: str, dx: float, dy: float, dyaw: float) -> ClipSet:
+        """Two role clips from the ``pair.partner_offset`` of role a's annotation: b at (dx, dy) in a's frame (x
+        forward, y left, m), turned dyaw (rad) from a."""
+        axis = math.atan2(dy, dx)
+        turn_b = math.remainder(dyaw - axis - math.pi, math.tau)
+        return cls(roles=(a, b), separation=math.hypot(dx, dy), headings=(-axis, turn_b))
+
+
+@attrs.frozen
 class InteractionKind:
     label: str
     handle: HandleSpec
@@ -104,7 +130,7 @@ class InteractionKind:
     formation_default: FormationSpec | None = None
     allows_offer: bool = False
     interaction_radius: float = DISTANCE_TOLERANCE
-    clip: str = ""  # animation clip shown while a participant, authored attention.clip overrides
+    clips: tuple[ClipSet, ...] = ()  # one drawn per interaction, shown while a participant, authored attention.clip overrides
     posture: str = "standing"  # standing | seated | prone while a participant
     render_pose_override: bool = False  # display the formation target instead of the physics pose (contact kinds)
 
@@ -112,9 +138,36 @@ class InteractionKind:
     def is_object_bound(self) -> bool:
         return self.handle.kind == HandleKind.OBJECT
 
+    @property
+    def clip(self) -> str:
+        """First role of the first clip set, what a member shows before its interaction drew a set."""
+        return self.clips[0].roles[0] if self.clips else ""
+
 
 def _fs(type_: str, anchor_kind: AnchorKind, params: dict[str, float] | None = None) -> FormationSpec:
     return FormationSpec(type=type_, params=dict(params or {}), anchor_kind=anchor_kind)
+
+
+def _one(*names: str) -> tuple[ClipSet, ...]:
+    """One-role sets: each interaction plays one of the clips on every member."""
+    return tuple(ClipSet(roles=(name,)) for name in names)
+
+
+# Clip sets of the two-person kinds. Contact pairs carry the stance their clips were made in (hug_v7_* and
+# shake_hand_v7_*: the separation of their annotation, facing each other; intermask_*: pair.partner_offset of role a).
+TALK_CLIPS = (*_one("talk_with_arm_gesture", "talk_with_arm_gesture_v1"), ClipSet(roles=("intermask_talk_a", "intermask_talk_b")))
+GROUP_CLIPS = (ClipSet(roles=("intermask_group_conversation_a", "intermask_group_conversation_b")),)
+WAVE_CLIPS = (*_one("wave"), ClipSet(roles=("intermask_wave_at_a", "intermask_wave_at_b")))
+HUG_CLIPS = (
+    ClipSet(roles=("hug_v7_air_w", "hug_v7_air_m"), separation=0.3126),
+    ClipSet(roles=("hug_v7_hero_w", "hug_v7_hero_m"), separation=0.2838),
+    ClipSet.pair("intermask_hug_a", "intermask_hug_b", 0.2785, -0.0065, 2.9248),
+)
+SHAKE_CLIPS = (
+    ClipSet(roles=("shake_hand_v7_men_pair",), separation=0.88),
+    ClipSet(roles=("shake_hand_v7_women_pair",), separation=0.84),
+    ClipSet(roles=("shake_hand_v7_doctor_pair",), separation=0.88),
+)
 
 
 class _NoneStrategy(HandleStrategy):
@@ -212,7 +265,7 @@ def _registry() -> dict[InteractionType, InteractionKind]:
             contract_defaults=ContractDefaults(min_participants=2, max_participants=2, queueable=False),
             formation_default=_fs("dyad", AnchorKind.CENTROID),
             interaction_radius=2.0,
-            clip="talk_with_arm_gesture",
+            clips=TALK_CLIPS,
         ),
         InteractionType.GROUP_CONVERSATION: InteractionKind(
             label="GROUP",
@@ -220,14 +273,14 @@ def _registry() -> dict[InteractionType, InteractionKind]:
             contract_defaults=ContractDefaults(min_participants=2, max_participants=-1, queueable=False),
             formation_default=_fs("f_formation", AnchorKind.CENTROID),
             interaction_radius=3.0,
-            clip="talk_with_arm_gesture",
+            clips=GROUP_CLIPS,
         ),
         InteractionType.SIT_ON: InteractionKind(
             label="SIT",
             handle=_OBJECT_HANDLE,
             contract_defaults=ContractDefaults(min_participants=1, max_participants=1, queueable=True, access=AccessKind.FIFO),
             formation_default=_fs("cluster", AnchorKind.OBJECT),
-            clip="sit",
+            clips=_one("sit"),
             posture="seated",
         ),
         InteractionType.LIE_ON: InteractionKind(
@@ -255,7 +308,7 @@ def _registry() -> dict[InteractionType, InteractionKind]:
             contract_defaults=ContractDefaults(min_participants=2, max_participants=2, queueable=False),
             formation_default=None,
             interaction_radius=6.0,  # above typical vision_range, a wave is matched at a distance
-            clip="wave",
+            clips=WAVE_CLIPS,
         ),
         InteractionType.HUG: InteractionKind(
             label="HUG",
@@ -263,7 +316,7 @@ def _registry() -> dict[InteractionType, InteractionKind]:
             contract_defaults=ContractDefaults(min_participants=2, max_participants=2, queueable=False),
             formation_default=_fs("dyad", AnchorKind.CENTROID, {"separation": 0.3}),
             interaction_radius=0.3,
-            clip="hug",
+            clips=HUG_CLIPS,
             render_pose_override=True,
         ),
         InteractionType.SHAKE_HAND: InteractionKind(
@@ -272,7 +325,7 @@ def _registry() -> dict[InteractionType, InteractionKind]:
             contract_defaults=ContractDefaults(min_participants=2, max_participants=2, queueable=False),
             formation_default=_fs("dyad", AnchorKind.CENTROID, {"separation": 0.8}),
             interaction_radius=0.3,
-            clip="shake_hand",
+            clips=SHAKE_CLIPS,
             render_pose_override=True,
         ),
         InteractionType.GROUP_WALK: InteractionKind(

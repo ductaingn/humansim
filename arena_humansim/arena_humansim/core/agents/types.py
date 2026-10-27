@@ -153,6 +153,7 @@ class ChannelDef:
 class ClipDef:
     name: str
     when: str = "always"  # always | bound (only while the agent is a participant of an active interaction)
+    by_role: bool = False  # the bound interaction's clip set picks this member's clip, ``name`` is the fallback
 
 
 CHANNEL_SLOTS = {"gaze": "head", "point": "arm", "point_l": "arm_l", "point_r": "arm_r", "halt": "halt", "halt_l": "halt_l", "halt_r": "halt_r"}

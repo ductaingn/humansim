@@ -66,7 +66,7 @@ Source of truth: the `InteractionKind.interaction_radius` fields in [../../arena
 
 A dyad whose target formation separation is smaller than the pair's combined `agent_radius` (a hug, unlike a `TALK_TO`, wants the two bodies to actually close in) can never be reached by tuning `interaction_radius` / the formation's `separation` alone: every local planner's own collision-avoidance repulsion between the pair keeps them apart by roughly `agent_radius_a + agent_radius_b`, no matter the target - this is true of every planner (SFM/HSFM, ORCA, learned ones like SocialGAIL/NSP) since it falls out of each one's own avoidance term, not something a scenario or a single planner can be tuned around.
 
-`InteractionKind.render_pose_override = True` (set on `HUG`) opts a kind out of that fight entirely, on the display side instead of the physics side: `AttentionNode._clip_render_target` (`core/behavior/nodes/attention.py`) publishes the interaction's live formation slot (`InteractionManager.formation_target`) as the clip's `GestureIntent.x/y`, flagged `render_pose_override=True` on the wire (`Gesture.msg`). `task_generator`'s humansim bridge (`_agent_states_to_pedestrians` in `simulators/human/arena_humansim/arena_humansim.py`) substitutes that position for the physics pose on the `Pedestrian` it publishes. Physics (collision avoidance, every other agent's avoidance, robot planning) is untouched - only what gets drawn/sensed downstream of `arena_peds` changes. This generalizes to any local planner, current or future, for free, since it never touches planner code at all.
+`InteractionKind.render_pose_override = True` (set on `HUG` and `SHAKE_HAND`) opts a kind out of that fight entirely, on the display side instead of the physics side: `AttentionNode._clip_render_target` (`core/behavior/nodes/attention.py`) publishes the interaction's live formation slot (`InteractionManager.formation_target`) as the clip's `GestureIntent.x/y`, flagged `render_pose_override=True` on the wire (`Gesture.msg`). `task_generator`'s humansim bridge (`_agent_states_to_pedestrians` in `simulators/human/arena_humansim/arena_humansim.py`) substitutes that position for the physics pose on the `Pedestrian` it publishes. Physics (collision avoidance, every other agent's avoidance, robot planning) is untouched - only what gets drawn/sensed downstream of `arena_peds` changes. This generalizes to any local planner, current or future, for free, since it never touches planner code at all.
 
 ### Directional greeting (`WAVE_AT` broadcaster/responder via `clip.when`)
 
@@ -216,7 +216,20 @@ attention:
 
 At least one channel (`clip` counts), and exactly one arm channel (`point` xor `point_l` xor `point_r`). Nothing is implicit: a body part without a channel stays idle. Slots on the wire: `gaze` -> `head`, `point` -> `arm` with `hand` from the ped's sampled handedness, `point_l`/`point_r` -> `arm_l`/`arm_r`, `clip` -> `body` with the clip name.
 
-`clip` names a clip of the animation layer, the engine never reads it. `when: bound` shows it only while the agent is a participant of an active interaction, which is how interaction kinds carry a default (`SIT_ON` -> `sit`, `WAVE_AT` -> `wave`, `TALK_TO` / `GROUP_CONVERSATION` -> `talk_with_arm_gesture`, `HUG` -> `hug`, see `InteractionKind.clip`); an authored `clip` on the step replaces the default. A bare step with only a `clip` needs `duration` or `patience`.
+`clip` names a clip of the animation layer, the engine never reads it. `when: bound` shows it only while the agent is a participant of an active interaction, which is how interaction kinds carry a default; an authored `clip` on the step replaces the default. A bare step with only a `clip` needs `duration` or `patience`.
+
+An interaction kind's default is a list of clip sets (`InteractionKind.clips`, `ClipSet` in [../../arena_humansim/core/interaction_kinds.py](../../arena_humansim/core/interaction_kinds.py)). Each interaction draws one set from its creator's random stream, and each member plays its role's clip, roles taken in join order and cycled for groups (a one-role set plays the same clip on everyone):
+
+| kind | clip sets |
+|---|---|
+| `SIT_ON` | `sit` |
+| `TALK_TO` | `talk_with_arm_gesture`, `talk_with_arm_gesture_v1`, `intermask_talk_{a,b}` |
+| `GROUP_CONVERSATION` | `intermask_group_conversation_{a,b}` |
+| `WAVE_AT` | `wave`, `intermask_wave_at_{a,b}` |
+| `HUG` | `hug_v7_air_{w,m}` (0.3126 m), `hug_v7_hero_{w,m}` (0.2838 m), `intermask_hug_{a,b}` (0.2786 m, turned 1.3 / -11.1 deg) |
+| `SHAKE_HAND` | `shake_hand_v7_men_pair` (0.88 m), `shake_hand_v7_women_pair` (0.84 m), `shake_hand_v7_doctor_pair` (0.88 m) |
+
+A set made for a stance carries it: its `separation` and per-role `headings` (each role's turn off facing its partner, `heading_a` / `heading_b` of the `dyad` formation) replace the kind's default dyad, so contact clips touch where they were made to. `ClipSet.pair` takes them straight from role a's `pair.partner_offset` annotation (written by `arena_animation_retarget --pair`). A step's own `formation_spec` replaces the set's stance, `contact_mode: locomotion_only` the separation and headings both.
 
 A channel is either `<targets>` (shorthand for `{at: <targets>}`) or a mapping:
 

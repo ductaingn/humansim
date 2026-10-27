@@ -231,7 +231,7 @@ def test_interaction_default_clip_rider(agent_factory: Callable[..., BaseAgent],
         return last if isinstance(last, AttentionNode) else None
 
     sit = rider(StepDef(interaction="SIT_ON", target="chair"))
-    assert sit is not None and sit._att == AttentionDef(clip=ClipDef(name="sit", when="bound"))
+    assert sit is not None and sit._att == AttentionDef(clip=ClipDef(name="sit", when="bound", by_role=True))
     wave = rider(StepDef(interaction="WAVE_AT", attention=AttentionDef(clip=ClipDef(name="wave_high"))))
     assert wave is not None and wave._att == AttentionDef(clip=ClipDef(name="wave_high"))
     assert rider(StepDef(interaction="SERVICE", target="water", offer=True)) is None

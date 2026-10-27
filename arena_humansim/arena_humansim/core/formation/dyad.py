@@ -14,7 +14,9 @@ class DyadFormation(Formation):
 
     On second member join, the pair orients along the line connecting their
     current poses; subsequently the anchor (typically a CentroidAnchor of the
-    pair) provides the midpoint and each member faces it.
+    pair) provides the midpoint and each member faces it, turned by its
+    ``heading_a`` / ``heading_b`` (rad, first and second member to join): the
+    stance a two-person clip was made in.
     """
 
     def __init__(
@@ -23,10 +25,13 @@ class DyadFormation(Formation):
         agent_lookup: AgentLookup,
         separation: float = 1.2,
         formation_scale: float = 1.0,
+        heading_a: float = 0.0,
+        heading_b: float = 0.0,
     ) -> None:
         self.anchor = anchor
         self.agent_lookup = agent_lookup
         self.separation = separation * formation_scale
+        self.headings = (float(heading_a), float(heading_b))
         self._members: list[int] = []
         self._axis_yaw: float = 0.0
 
@@ -61,8 +66,8 @@ class DyadFormation(Formation):
         dx = half * math.cos(self._axis_yaw)
         dy = half * math.sin(self._axis_yaw)
         a_id, b_id = self._members[0], self._members[1]
-        out[a_id] = Pose2D(x=center.x - dx, y=center.y - dy, theta=self._axis_yaw)
-        out[b_id] = Pose2D(x=center.x + dx, y=center.y + dy, theta=self._axis_yaw + math.pi)
+        out[a_id] = Pose2D(x=center.x - dx, y=center.y - dy, theta=self._axis_yaw + self.headings[0])
+        out[b_id] = Pose2D(x=center.x + dx, y=center.y + dy, theta=self._axis_yaw + math.pi + self.headings[1])
         return out
 
     def arrived(self, agent_id: int) -> bool:

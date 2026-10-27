@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 
 import pytest
@@ -176,15 +177,20 @@ def test_promoted_customer_gets_its_own_hold() -> None:
     assert interaction.contract.elapsed == pytest.approx(DT)
 
 
-@pytest.mark.parametrize("itype, contact_sep", [(InteractionType.HUG, 0.3), (InteractionType.SHAKE_HAND, 0.8)])
-def test_locomotion_only_holds_at_standing_distance(itype: InteractionType, contact_sep: float) -> None:
-    for mode, expected in ((CONTACT_ENABLED, contact_sep), (CONTACT_LOCOMOTION_ONLY, 1.5)):
+@pytest.mark.parametrize("itype", [InteractionType.HUG, InteractionType.SHAKE_HAND])
+def test_locomotion_only_holds_at_standing_distance(itype: InteractionType) -> None:
+    for mode in (CONTACT_ENABLED, CONTACT_LOCOMOTION_ONLY):
         agents = _pair(0.0, 4.0)
         mgr = _mgr(agents, mode, standing=1.5)
         mgr.update(_seek(agents, itype), dt=DT)
+        clips = mgr.clip_set(next(iter(mgr.interactions.values())))
+        assert clips is not None and clips.separation is not None
+        expected = clips.separation if mode == CONTACT_ENABLED else 1.5
         a, b = mgr.formation_target(1), mgr.formation_target(2)
         assert a is not None and b is not None
-        assert abs(b.x - a.x) == pytest.approx(expected)
+        assert math.hypot(b.x - a.x, b.y - a.y) == pytest.approx(expected)
+        if mode == CONTACT_LOCOMOTION_ONLY:  # nothing touches, so the pair just faces each other
+            assert (a.theta, b.theta - math.pi) == pytest.approx((0.0, 0.0))
 
 
 def test_locomotion_only_never_shows_contact_but_still_holds() -> None:

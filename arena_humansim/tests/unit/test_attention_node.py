@@ -947,3 +947,20 @@ def test_posture_held_for_the_step_and_dropped_after(agent_factory: Callable[...
     assert _mv(agent).posture == "prone"
     node.stop(SUCCESS)
     assert _mv(agent).posture == ""
+
+
+def test_role_clip_publishes_each_members_clip_of_the_drawn_set(agent_factory: Callable[..., BaseAgent], world: WorldKnowledge, rng_np: np.random.Generator) -> None:
+    a = _bt_agent(agent_factory, agent_id=1, x=0.0, y=0.0)
+    b = _bt_agent(agent_factory, agent_id=2, x=2.0, y=0.0)
+    agents = {1: a, 2: b}
+    mgr = _bind(agents, InteractionType.HUG)
+    interaction = next(iter(mgr.interactions.values()))
+    fallback = InteractionType.HUG.kind.clip
+    nodes = {aid: _node(agent, _att(clip=ClipDef(name=fallback, when="bound", by_role=True)), world, rng_np, agents=agents, ctx=StepContext(im=mgr, is_bound_lookup=mgr.is_bound)) for aid, agent in agents.items()}
+    _hold(mgr, agents)
+    for aid, node in nodes.items():
+        assert _tick(node) == RUNNING
+        body = _slots(agents[aid])["body"]
+        assert body.clip == mgr.role_clip(interaction, aid)
+        assert body.render_pose_override is True
+    assert _slots(a)["body"].clip != _slots(b)["body"].clip or len(mgr.clip_set(interaction).roles) == 1
