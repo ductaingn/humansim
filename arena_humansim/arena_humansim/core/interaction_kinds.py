@@ -154,20 +154,16 @@ def _one(*names: str) -> tuple[ClipSet, ...]:
 
 
 # Clip sets of the two-person kinds. Contact pairs carry the stance their clips were made in (hug_v7_* and
-# shake_hand_v7_*: the separation of their annotation, facing each other; intermask_*: pair.partner_offset of role a).
-TALK_CLIPS = (*_one("talk_with_arm_gesture", "talk_with_arm_gesture_v1"), ClipSet(roles=("intermask_talk_a", "intermask_talk_b")))
+# shake_hand_v7_*: the separation of their annotation, facing each other; intermask_*: pair.partner_offset of role a,
+# see ClipSet.pair).
+TALK_CLIPS = (*_one("talk_with_arm_gesture", "talk_with_arm_gesture_2", "talk_with_arm_gesture_3", "talk_with_arm_gesture_4", "talk_with_arm_gesture_v1"), ClipSet(roles=("intermask_talk_a", "intermask_talk_b")))
 GROUP_CLIPS = (ClipSet(roles=("intermask_group_conversation_a", "intermask_group_conversation_b")),)
 WAVE_CLIPS = (*_one("wave"), ClipSet(roles=("intermask_wave_at_a", "intermask_wave_at_b")))
 HUG_CLIPS = (
     ClipSet(roles=("hug_v7_air_w", "hug_v7_air_m"), separation=0.3126),
     ClipSet(roles=("hug_v7_hero_w", "hug_v7_hero_m"), separation=0.2838),
-    ClipSet.pair("intermask_hug_a", "intermask_hug_b", 0.2785, -0.0065, 2.9248),
 )
-SHAKE_CLIPS = (
-    ClipSet(roles=("shake_hand_v7_men_pair",), separation=0.88),
-    ClipSet(roles=("shake_hand_v7_women_pair",), separation=0.84),
-    ClipSet(roles=("shake_hand_v7_doctor_pair",), separation=0.88),
-)
+SHAKE_CLIPS = (ClipSet(roles=("shake_hand_v7_doctor_pair",), separation=0.88),)
 
 
 class _NoneStrategy(HandleStrategy):

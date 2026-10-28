@@ -223,11 +223,11 @@ An interaction kind's default is a list of clip sets (`InteractionKind.clips`, `
 | kind | clip sets |
 |---|---|
 | `SIT_ON` | `sit` |
-| `TALK_TO` | `talk_with_arm_gesture`, `talk_with_arm_gesture_v1`, `intermask_talk_{a,b}` |
+| `TALK_TO` | `talk_with_arm_gesture`, `talk_with_arm_gesture_{2,3,4}`, `talk_with_arm_gesture_v1`, `intermask_talk_{a,b}` |
 | `GROUP_CONVERSATION` | `intermask_group_conversation_{a,b}` |
 | `WAVE_AT` | `wave`, `intermask_wave_at_{a,b}` |
-| `HUG` | `hug_v7_air_{w,m}` (0.3126 m), `hug_v7_hero_{w,m}` (0.2838 m), `intermask_hug_{a,b}` (0.2786 m, turned 1.3 / -11.1 deg) |
-| `SHAKE_HAND` | `shake_hand_v7_men_pair` (0.88 m), `shake_hand_v7_women_pair` (0.84 m), `shake_hand_v7_doctor_pair` (0.88 m) |
+| `HUG` | `hug_v7_air_{w,m}` (0.3126 m), `hug_v7_hero_{w,m}` (0.2838 m) |
+| `SHAKE_HAND` | `shake_hand_v7_doctor_pair` (0.88 m) |
 
 A set made for a stance carries it: its `separation` and per-role `headings` (each role's turn off facing its partner, `heading_a` / `heading_b` of the `dyad` formation) replace the kind's default dyad, so contact clips touch where they were made to. `ClipSet.pair` takes them straight from role a's `pair.partner_offset` annotation (written by `arena_animation_retarget --pair`). A step's own `formation_spec` replaces the set's stance, `contact_mode: locomotion_only` the separation and headings both.
 
