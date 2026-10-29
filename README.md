@@ -44,7 +44,7 @@ All modules are swappable via a plugin registry.
 | Layer | Options | Default |
 |---|---|---|
 | [Global Planner](arena_humansim/arena_humansim/global_planner/README.md) | `navmesh`, `astar`, `dijkstra` | `navmesh` |
-| [Local Planner](arena_humansim/arena_humansim/local_planner/README.md) | `sfm`, `hsfm`, `helbing`, `johansson`, `karamouzas`, `zanlungo`, `gcf`, `orca`, `pedvo`, `straight`, `nsp`, `socialgail` | `sfm` |
+| [Local Planner](arena_humansim/arena_humansim/local_planner/README.md) | `sfm`, `hsfm`, `helbing`, `johansson`, `karamouzas`, `zanlungo`, `gcf`, `orca`, `pedvo`, `straight`, `nsp`, `socialgail`, `neurosfm` | `sfm` |
 | [Perception](arena_humansim/arena_humansim/perception/README.md) | `default` | `default` |
 | [Animation](arena_humansim/arena_humansim/animation/README.md) | `noop`, `kinematic` | `noop` |
 | [Collision](arena_humansim/arena_humansim/collision/README.md) | `wall_projection`, `noop` | `wall_projection` |
