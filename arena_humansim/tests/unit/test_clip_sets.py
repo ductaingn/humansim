@@ -4,16 +4,16 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass, field
+from typing import Any
 
 import pytest
-
 from arena_humansim.core.formation.anchor import PoseAnchor
 from arena_humansim.core.formation.dyad import DyadFormation
 from arena_humansim.core.interaction_kinds import ClipSet, InteractionType
 from arena_humansim.core.interaction_manager import CONTACT_ENABLED, InteractionManager
 from arena_humansim.core.world_knowledge import WorldKnowledge
 from arena_humansim.utils.rng import RNG
-from arena_humansim.utils.types import BehaviorTreeMovement, CommandType, HighLevelCommand, Pose2D, SeekSpec
+from arena_humansim.utils.types import AnchorKind, BehaviorTreeMovement, CommandType, FormationSpec, HighLevelCommand, Pose2D, SeekSpec
 
 DT = 0.1
 
@@ -31,13 +31,13 @@ class _Agent:
     movement: BehaviorTreeMovement = field(default_factory=BehaviorTreeMovement)
 
 
-def _bound(itype: InteractionType, n: int = 2, seed: int = 0) -> tuple[InteractionManager, dict[int, _Agent]]:
+def _bound(itype: InteractionType, n: int = 2, seed: int = 0, **spec: Any) -> tuple[InteractionManager, dict[int, _Agent]]:
     agents = {i: _Agent(_State(agent_id=i, pose=Pose2D(x=1.5 * (i - 1), y=0.3 * (i % 2)))) for i in range(1, n + 1)}
     mgr = InteractionManager(RNG(seed))
     mgr.set_context(world_knowledge=WorldKnowledge(), agent_lookup=agents.get, visibility_lookup=lambda aid: set(agents) - {aid})
     mgr.set_contact_mode(CONTACT_ENABLED)
     for aid in agents:  # one at a time, so the join order is the agent id order
-        mgr.update({aid: HighLevelCommand(agent_id=aid, type=CommandType.SEEK, spec=SeekSpec(interaction_type=itype))}, dt=DT)
+        mgr.update({aid: HighLevelCommand(agent_id=aid, type=CommandType.SEEK, spec=SeekSpec(interaction_type=itype, **spec))}, dt=DT)
     return mgr, agents
 
 
@@ -76,6 +76,27 @@ def test_hug_members_play_their_roles_at_the_sets_stance() -> None:
     axis = math.atan2(b.y - a.y, b.x - a.x)
     assert _wrap(a.theta - axis) == pytest.approx(clips.headings[0])
     assert _wrap(b.theta - axis - math.pi) == pytest.approx(clips.headings[1])
+
+
+def _separation(mgr: InteractionManager) -> float:
+    a, b = mgr.formation_target(1), mgr.formation_target(2)
+    assert a is not None and b is not None
+    return math.hypot(b.x - a.x, b.y - a.y)
+
+
+def test_a_steps_formation_spec_overrides_the_sets_stance() -> None:
+    mgr, _ = _bound(InteractionType.HUG, formation_spec=FormationSpec(type="dyad", params={"separation": 1.1}, anchor_kind=AnchorKind.CENTROID))
+    assert mgr.clip_set(next(iter(mgr.interactions.values()))) is not None
+    assert _separation(mgr) == pytest.approx(1.1)
+
+
+def test_the_sets_stance_overrides_the_kinds_default() -> None:
+    mgr, _ = _bound(InteractionType.HUG)
+    clips = mgr.clip_set(next(iter(mgr.interactions.values())))
+    default = InteractionType.HUG.kind.formation_default
+    assert clips is not None and clips.separation is not None and default is not None
+    assert default.params["separation"] != pytest.approx(clips.separation)
+    assert _separation(mgr) == pytest.approx(clips.separation)
 
 
 def test_clip_set_is_drawn_once_and_reproducibly() -> None:
