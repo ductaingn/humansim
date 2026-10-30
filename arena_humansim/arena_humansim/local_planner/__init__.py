@@ -150,6 +150,12 @@ def _load_socialgail() -> type[LocalPlanner]:
     return SocialGAILPlanner
 
 
+def _load_neurosfm() -> type[LocalPlanner]:
+    from .neurosfm import NeuroSFMPlanner
+
+    return NeuroSFMPlanner
+
+
 def _load_nsp() -> type[LocalPlanner]:
     from .nsp.planner import NSPPlanner
 
@@ -192,6 +198,7 @@ _register("pedvo", _load_pedvo, "PedVO", "geometric")
 _register("straight", _load_straight, "Straight", "no_avoidance")
 _register("nsp", _load_nsp, "NSP", "learned")
 _register("socialgail", _load_socialgail, "SocialGAIL", "learned")
+_register("neurosfm", _load_neurosfm, "NeuroSFM", "learned")
 _register("cadrl", _load_cadrl, "CADRL", "learned", robot_policy=True)
 _register("sarl", _load_sarl, "SARL", "learned", robot_policy=True)
 _register("drlvo", _load_drlvo, "DRL-VO", "learned", robot_policy=True)

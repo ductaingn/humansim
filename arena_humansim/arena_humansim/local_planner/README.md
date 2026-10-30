@@ -18,6 +18,7 @@ Velocity commands for the next tick, given each agent's global subgoal and neigh
 | `straight` | `StraightToGoalPlanner` | Ignores neighbors, drives toward the subgoal at `desired_velocity`. `supports_pool=True`. For debugging and robot policies that don't want avoidance. |
 | `nsp` | `NSPPlanner` | Neural Social Physics (Yue/Manocha/Wang, ECCV 2022) with SDD-pretrained checkpoints. Requires `torch`. `supports_pool=True`. |
 | `socialgail` | `SocialGAILPlanner` | Learned crowd-sim policy from [William-island/SocialGAIL](https://github.com/William-island/SocialGAIL) (ICRA 2024, MIT). Pretrained HGNN actor; weights fetched on first use to `~/.cache/arena_humansim/socialgail/best.pt`. Requires `pip install torch torch-geometric`. `supports_pool=True`; re-infers every 8 sim ticks (0.4s decision interval, matching training). No wall handling - relies on `wall_projection`. |
+| `neurosfm` | `NeuroSFMPlanner` | Neural social force model of [HumanoidsBonn/NeuroSFM_Pybullet](https://github.com/HumanoidsBonn/NeuroSFM_Pybullet) (MIT, `NEUROSFM_LICENSE`), the released force nets frozen and run in numpy from `neurosfm.npz`: `drive_gain` times net1 for the goal force, `social_gain` times the sum of net3 over the neighbors (the gap between body ellipses fitted to the reference male and female meshes, facing each walker's velocity, each walker's body a fixed fair draw by agent id, used within 0.89 m, else the center distance), 4 times net5 for a robot within 2.5 m, and the reference's contact-only wall push. A `ForcePlanner`, `supports_pool=True`, no torch. |
 
 ## Contract
 
@@ -84,6 +85,7 @@ Per-agent local-planner params live under `local_planner_params:` in each agent 
 | `karamouzas` | `relaxation_time`, `wall_steepness`, `wall_distance`, `colliding_count`, `d_min`, `d_mid`, `d_max`, `agent_force`, `personal_space`, `anticipation`, `fov_angle` (degrees) |
 | `zanlungo` | `relaxation_time`, `mass`, `agent_scale`, `obstacle_scale`, `force_distance` |
 | `gcf` | `relaxation_time`, `nu_agent`, `max_agent_dist`, `max_agent_force`, `agent_interp_width`, `a_min`, `a_rate`, `b_max`, `b_growth`, `nu_wall`, `max_wall_dist`, `max_wall_force`, `wall_interp_width` |
+| `neurosfm` | `drive_gain`, `social_gain` |
 | `orca` / `pedvo` / `straight` / `socialgail` / `nsp` | none |
 
 ## Interaction classes (`sfm` family)
