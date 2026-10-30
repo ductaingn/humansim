@@ -1115,6 +1115,10 @@ class InteractionManager(Loggable):
         held = self.held_seats(object_id)
         return [seat for seat in range(self._seat_count(object_id)) if self._seat_fits(object_id, seat, held)]
 
+    def free_seats(self, object_id: str) -> list[int]:
+        """Seats of the object nobody holds and no held seat overlaps, right now."""
+        return self._fitting_seats(object_id)
+
     @staticmethod
     def _unseated(interaction: InteractionState) -> int:
         formation = interaction.contract.formation

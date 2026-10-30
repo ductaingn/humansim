@@ -14,9 +14,10 @@ from arena_humansim.core.behavior.nodes.helpers import (
     _set_command,
 )
 from arena_humansim.core.behavior.step_context import StepContext
+from arena_humansim.core.interaction_kinds import InteractionType
 from arena_humansim.core.world_knowledge import WorldKnowledge, WorldObject
 from arena_humansim.utils import DISTANCE_TOLERANCE
-from arena_humansim.utils.types import Pose2D
+from arena_humansim.utils.types import Pose2D, pose_distance
 
 if TYPE_CHECKING:
     from arena_humansim.core.pool import AgentPool
@@ -37,6 +38,29 @@ def _approach_pose_for(obj: WorldObject, world: WorldKnowledge) -> Pose2D:
         y=obj.pose.y + offset * math.sin(back),
         theta=obj.pose.theta,
     )
+
+
+def _seat_aim(obj: WorldObject, ctx: StepContext, from_pose: Pose2D) -> Pose2D | None:
+    """Standing point before the free seat nearest from_pose, None when the step does not aim at seats or none is free.
+
+    Aiming reserves nothing: the seat is taken by whoever seeks first (ClusterFormation picks the same nearest free
+    seat then), and a walker whose seat is taken meanwhile aims at the next free one on its next tick.
+    """
+    if not ctx.aim_seats or not obj.seats or ctx.im is None:
+        return None
+    free = [s for s in ctx.im.free_seats(obj.object_id) if s < len(obj.seats)]
+    if not free:
+        return None
+    best = min(free, key=lambda s: pose_distance(obj.seats[s], from_pose))
+    seat = obj.seats[best]
+    approach = obj.seat_approach[best] if best < len(obj.seat_approach) else 0.0
+    return Pose2D(x=seat.x + approach * math.cos(seat.theta), y=seat.y + approach * math.sin(seat.theta), theta=seat.theta)
+
+
+def _walk_target(obj: WorldObject, world: WorldKnowledge, ctx: StepContext, from_pose: Pose2D) -> Pose2D:
+    """Where an object-bound step walks: the nearest free seat's standing point for a sitter, else the approach pose."""
+    aim = _seat_aim(obj, ctx, from_pose)
+    return aim if aim is not None else _approach_pose_for(obj, world)
 
 
 class ResolveObjectNode(py_trees.behaviour.Behaviour):
@@ -70,7 +94,8 @@ class ResolveObjectNode(py_trees.behaviour.Behaviour):
                 _bt_logger.warning(f"Agent {self._agent.state.agent_id}: step {self.name} could not resolve target={self._target!r}")
 
         if obj is not None:
-            self._ctx.target_pose = _approach_pose_for(obj, self._world)
+            self._ctx.aim_seats = self._interaction_name is not None and InteractionType[self._interaction_name].kind.posture == "seated"
+            self._ctx.target_pose = _walk_target(obj, self._world, self._ctx, self._agent.state.pose)
             self._ctx.target_object_id = obj.object_id
             self._ctx.interaction_radius = _resolve_interaction_radius(obj, self._step_interaction_radius, self._interaction_name)
             self._resolved = True
@@ -114,7 +139,7 @@ class GoToNode(py_trees.behaviour.Behaviour):
         if self._world is not None and self._ctx.target_object_id is not None:
             obj = self._world.get(self._ctx.target_object_id)
             if obj is not None:
-                self._ctx.target_pose = _approach_pose_for(obj, self._world)
+                self._ctx.target_pose = _walk_target(obj, self._world, self._ctx, self._agent.state.pose)
         return self._ctx.target_pose, self._ctx.interaction_radius
 
     def _arrived(self, target: Pose2D, tolerance: float) -> bool:

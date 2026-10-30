@@ -15,5 +15,6 @@ class StepContext:
     target_object_id: str | None = None
     interaction_radius: float = DISTANCE_TOLERANCE
     sought: bool = False
+    aim_seats: bool = False  # walk to the nearest free seat's standing point instead of the object's origin
     is_bound_lookup: Callable[[int], bool] | None = None
     im: InteractionManager | None = None
