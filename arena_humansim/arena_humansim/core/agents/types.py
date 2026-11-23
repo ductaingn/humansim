@@ -471,7 +471,7 @@ class SequenceDef:
     tune: TuneDef | None = None
 
 
-ROBOT_RESPONSES = ("avoid", "halt")  # a perceived robot: steer around it, or brake (ahead) / slow (beside, behind) without steering
+ROBOT_RESPONSES = ("avoid", "halt")
 
 
 @attrs.frozen

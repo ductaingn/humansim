@@ -34,7 +34,7 @@ _DEFAULT_CLASS_GAINS: dict[tuple[str, str], tuple[float, float]] = {
     ("wheelchair", "robot"): (1.5, 1.3),
 }
 
-# robot_response "halt": the speed kept while a perceived robot is beside or behind (ahead: stop). An assumption, no measured value.
+# robot_response "halt": share of the desired speed kept while a perceived robot is beside or behind (assumed, not measured).
 HALT_SLOW_FACTOR = 0.5
 
 _WALL_CUTOFF_RANGES = 28.0
@@ -392,9 +392,8 @@ class SFMPlanner(LocalPlanner):
                 if np.any(halting):
                     eff_strength[halting] = 0.0  # no steering around the robot
                     obs = pair_obs[halting]
-                    to_robot = pos[pair_nbr[halting]] - pos[obs]
                     heading = pool.theta[obs]
-                    ahead = to_robot[:, 0] * np.cos(heading) + to_robot[:, 1] * np.sin(heading) > 0.0
+                    ahead = normals[halting, 0] * np.cos(heading) + normals[halting, 1] * np.sin(heading) < 0.0
                     np.minimum.at(speed_scale, obs, np.where(ahead, 0.0, HALT_SLOW_FACTOR))
             eff_range = np.maximum(eff_range, 1e-4)
             magnitudes = eff_strength * np.exp((r_ij - dists) / eff_range)
@@ -530,7 +529,7 @@ class SFMPlanner(LocalPlanner):
                     if agent.params.perception.robot_halt:
                         eff_s[is_robot_nbr] = 0.0  # no steering around the robot
                         heading = agent.state.pose.theta
-                        ahead = -diff[is_robot_nbr, 0] * math.cos(heading) - diff[is_robot_nbr, 1] * math.sin(heading) > 0.0
+                        ahead = diff[is_robot_nbr, 0] * math.cos(heading) + diff[is_robot_nbr, 1] * math.sin(heading) < 0.0
                         speed_scale = 0.0 if np.any(ahead) else HALT_SLOW_FACTOR
                 eff_r = np.maximum(eff_r, 1e-4)
                 magnitudes = eff_s * np.exp((r_ij - dists) / eff_r)
