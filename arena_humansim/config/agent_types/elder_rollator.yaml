@@ -28,5 +28,6 @@ pose:
   hold: {l: {radius: 0.018, angle: -35}, r: {radius: 0.018, angle: -35}}  # RollatorFitted foam grips, diagonal across the palm (index base to heel of the hand)
   walk: {base: walk_rollator}
   run: {same_as: walk}
+  idle: {base: stand_rollator}  # stopped, the hands stay on the grips so the aid stays planted
 
 device: {kind: rollator, bone: prop}
