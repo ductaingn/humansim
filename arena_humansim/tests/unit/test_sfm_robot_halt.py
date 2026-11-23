@@ -9,6 +9,7 @@ import pytest
 from arena_humansim.core.agents.base import BaseAgent
 from arena_humansim.core.agents.loader import load_agent_type_from_file
 from arena_humansim.core.agents.types import sample_agent_type
+from arena_humansim.core.animation_kinds import AnimationType, locomotion_states
 from arena_humansim.core.pool import KIND_HUMAN, KIND_ROBOT, AgentPool
 from arena_humansim.local_planner.sfm import HALT_SLOW_FACTOR, SFMPlanner
 from arena_humansim.utils.types import Pose2D
@@ -53,6 +54,15 @@ def test_a_halting_walker_slows_for_a_robot_behind(pool_empty: Callable[..., Age
     target, f_rep = _target_speed(pool, planner)
     assert target == pytest.approx(HALT_SLOW_FACTOR * pool.desired_vel[0])
     assert np.allclose(f_rep, 0.0)
+
+
+@pytest.mark.parametrize(("robot", "halted"), [((0.8, 0.3), True), ((-0.8, 0.3), False)])
+def test_a_walker_held_still_for_a_robot_ahead_stands_idle(pool_empty: Callable[..., AgentPool], agent_factory: Callable[..., BaseAgent], robot: tuple[float, float], halted: bool) -> None:
+    pool, planner = _pool(pool_empty, agent_factory, halt=True, robot=robot)
+    planner._compute_forces_pool(pool)
+    assert pool.robot_halted[0] is np.bool_(halted)
+    state = locomotion_states(pool.vel[:2], pool.has_goal[:2], pool.desired_vel[:2], pool.robot_halted[:2])[0]
+    assert state == (AnimationType.IDLE if halted else AnimationType.WALKING)  # at rest, a goal-holder otherwise reports walking
 
 
 def test_an_avoiding_walker_keeps_its_speed_and_steers(pool_empty: Callable[..., AgentPool], agent_factory: Callable[..., BaseAgent]) -> None:

@@ -20,8 +20,9 @@ class AnimationType(enum.IntEnum):
     THREATENING = 6
 
 
-def locomotion_states(vel: np.ndarray, has_goal: np.ndarray, desired_vel: np.ndarray) -> np.ndarray:
-    """IDLE/WALKING/RUNNING from speed, a goal-holding agent at rest reports its desired speed (no one-tick idle at start)."""
+def locomotion_states(vel: np.ndarray, has_goal: np.ndarray, desired_vel: np.ndarray, halted: np.ndarray) -> np.ndarray:
+    """IDLE/WALKING/RUNNING from speed, a goal-holding agent at rest reports its desired speed (no one-tick idle at start)
+    unless the planner is holding it still (halted), then it stands idle instead of stepping in place."""
     speed = np.hypot(vel[:, 0], vel[:, 1])
-    effective = np.where((speed <= WALK_SPEED) & has_goal, desired_vel, speed)
+    effective = np.where((speed <= WALK_SPEED) & has_goal & ~halted, desired_vel, speed)
     return np.where(effective > RUN_SPEED, AnimationType.RUNNING, np.where(effective > WALK_SPEED, AnimationType.WALKING, AnimationType.IDLE)).astype(np.uint8)

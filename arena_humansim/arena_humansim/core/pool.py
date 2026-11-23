@@ -76,6 +76,7 @@ class AgentPool:
         self.robot_reaction_gain = np.ones(capacity, dtype=np.float64)
         self.robot_blind = np.zeros(capacity, dtype=np.bool_)
         self.robot_halt = np.zeros(capacity, dtype=np.bool_)
+        self.robot_halted = np.zeros(capacity, dtype=np.bool_)  # set each tick by the local planner: held still for a robot ahead
 
         self.goal_pos = np.zeros((capacity, 2), dtype=np.float64)
         self.has_goal = np.zeros(capacity, dtype=np.bool_)
@@ -143,6 +144,7 @@ class AgentPool:
         self.has_goal_theta[i] = False
         self.latched[i] = False
         self.prev_vel[i] = self.vel[i]
+        self.robot_halted[i] = False
         self.kind[i] = 0
         self.interaction_class[i] = 0
         self.axial_offset[i] = 0.0
@@ -207,6 +209,7 @@ class AgentPool:
                 self.robot_reaction_gain,
                 self.robot_blind,
                 self.robot_halt,
+                self.robot_halted,
                 self.has_goal,
                 self.has_terminal,
                 self.goal_theta,
@@ -327,6 +330,7 @@ class AgentPool:
         self.robot_reaction_gain = _resize_1d(self.robot_reaction_gain)
         self.robot_blind = _resize_1d(self.robot_blind)
         self.robot_halt = _resize_1d(self.robot_halt)
+        self.robot_halted = _resize_1d(self.robot_halted)
         self.goal_pos = _resize_2d(self.goal_pos)
         self.has_goal = _resize_1d(self.has_goal)
         self.terminal_pos = _resize_2d(self.terminal_pos)

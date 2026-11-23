@@ -406,6 +406,7 @@ class SFMPlanner(LocalPlanner):
             pair_forces = magnitudes[:, None] * normals
             np.add.at(f_rep, pair_obs, pair_forces)
 
+        pool.robot_halted[:n] = has_goal & (speed_scale == 0.0)
         f_att = ((desired_v * speed_scale)[:, None] * e_goal - vel) / relax[:, None]
         at_goal = (dist_goal[:, 0] < _EPS) | ~has_goal
         f_att[at_goal] = 0.0

@@ -2454,7 +2454,7 @@ class AgentManager(TimeNode):
     def _update_animation_states(self) -> None:
         pool = self._pool
         n = pool.n
-        pool.animation_state[:n] = locomotion_states(pool.vel[:n], pool.has_goal[:n], pool.desired_vel[:n])
+        pool.animation_state[:n] = locomotion_states(pool.vel[:n], pool.has_goal[:n], pool.desired_vel[:n], pool.robot_halted[:n])
         pool.animation_state[:n][self._zones.standing(pool)] = AnimationType.IDLE
 
     def _mark_roster_dirty(self) -> None:
