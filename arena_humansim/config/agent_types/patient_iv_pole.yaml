@@ -26,5 +26,6 @@ pose:
   hold: {l: {radius: 0.008, angle: 42, curls: [0.5, 1.15, 1.11, 0.94, 0.31]}}
   walk: {base: walk_ivpole}
   run: {same_as: walk}
+  idle: {base: stand_ivpole}  # stopped, the hand stays on the pole so the stand stays planted
 
 device: {kind: iv_stand, bone: prop}
