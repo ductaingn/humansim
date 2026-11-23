@@ -28,7 +28,7 @@ Perception (`perception:`):
   - `reaction`: gain on the SFM repulsion range B against robots, `1 + sigmas x (std / mean)` of `repulsion_range` (same fallback), floored at 0.05. A larger B starts avoiding robots earlier.
   - `blind: true` removes robots from perception entirely.
   - The former scalar keys (a numeric `robot_awareness`, `robot_repulsion_gain`, `robot_fov_gain` and `robot_reaction_gain`) are removed; the shifts above replace them.
-- `robot_response` - what the agent does with a robot it perceives (SFM planner). `avoid` (default) steers around it. `halt` never steers around it: the agent brakes to a stop while the robot is ahead of its heading and walks at `HALT_SLOW_FACTOR` (0.5) of its desired speed while the robot is beside or behind it, until the robot leaves its perception. Used by the long-cane users, who notice a robot only at close range and rely on others to give way.
+- `robot_response` - what the agent does with a robot it perceives (SFM planner). `avoid` (default) steers around it. `halt` never steers around it: the agent brakes to a stop while the robot is ahead of its heading and walks at `HALT_SLOW_FACTOR` (0.5) of its desired speed while the robot is beside or behind it, until the robot leaves its perception. Used by the long-cane users, who notice a robot only at close range and rely on others to give way, and by the walking-frame user, who cannot step sideways without lifting the frame.
 
 Built-in presets for robot awareness: `blind`, `distracted`, `normal`, `interested`, `aggressive`, `scared`. Their shifts are listed under the archetypes below.
 
@@ -338,7 +338,7 @@ For a `dynamic:` scenario entry, `ArenaHumanDynamicObstacle.sample_params` (in [
 ## Included types
 
 - `adult` - nominal pedestrian (desired 1.1 m/s, 5 m vision, 180deg FOV).
-- `elder` - slower, narrower FOV, longer SFM relaxation. Demonstrates how heterogeneity drops out of a handful of distribution tweaks.
+- `elder` - slower, narrower FOV, longer SFM relaxation, and weaker, later avoidance than `adult` (older adults start avoiding about 1 m later and leave most of it to the other person). Demonstrates how heterogeneity drops out of a handful of distribution tweaks.
 - `child` - small body (0.18 m), wide speed spread (0.4-1.8 m/s), 3 m vision, weaker SFM repulsion.
 - `hurried` - fast (desired 1.7 m/s), narrower FOV, shorter SFM relaxation and repulsion range.
 - `distracted` - phone-walker: 2 m vision, 90 degree FOV, longer SFM relaxation. Robot shifts: `detection` -5, `fov` -8, `repulsion` -3, `reaction` -3. On an adult (180 degree FOV, std 10) the `fov` shift gives 100 degrees. The shipped `distracted.yaml` type already starts at 90 degrees, so it takes no `fov` shift, which would count the narrowing twice. It uses `detection` -0.75, `repulsion` -3 and `reaction` -3 instead.
@@ -363,5 +363,5 @@ For a `dynamic:` scenario entry, `ArenaHumanDynamicObstacle.sample_params` (in [
 `sidewalk_crossing` declares the need `robot_in_zone`, so a runtime that knows the crosswalk zone can send the stimulus `robot_in_zone` at 1 to fire the crossing when the robot enters it.
 
 - `robot` - fixed (non-distribution) values for a robot-driven agent: zero `min_turning_radius`, 360deg FOV, no `idle_gaze_rate`.
-- `wheelchair_manual` - manually propelled wheelchair user: `extends: adult`, `along_heading` kinematics on `hsfm` with `heading_source: total`, a 1.1 m capsule footprint, push-stroke speed modulation (two harmonics), stall recovery with a 0.3 m reverse, seated pose with arm push strokes and the `human::mobility::wheelchair` asset. Every number in the file is a placeholder pending literature values (push cadence, stroke speed profile, footprint), not a measured profile.
+- `wheelchair_manual` - manually propelled wheelchair user: `extends: adult`, `along_heading` kinematics on `hsfm` with `heading_source: total`, a 1.1 m capsule footprint, 1.0 m/s comfortable speed and 1.0 m/s² braking, push-stroke speed modulation (two harmonics), stall recovery with a 0.3 m reverse, seated pose with arm push strokes and the `human::mobility::wheelchair` asset. Every number in the file is a placeholder pending literature values (push cadence, stroke speed profile, footprint), not a measured profile.
 - `adult_limp_right` - adult with a right-leg limp: `extends: adult`, uneven cycle timing (`phase_warp.split`), one speed dip and one lateral lurch per cycle, and an asymmetric walk pose (stiff right knee, shortened right hip swing, trunk lean). Every number in the file is a placeholder pending a fitted profile.

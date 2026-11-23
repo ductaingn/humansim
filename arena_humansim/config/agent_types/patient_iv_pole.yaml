@@ -4,7 +4,7 @@
 name: patient_iv_pole
 extends: elder
 
-desired_velocity: {mean: 0.6, std: 0.05, clip_low: 0.4, clip_high: 0.75}
+desired_velocity: {mean: 0.55, std: 0.05, clip_low: 0.4, clip_high: 0.7}  # inpatients walk 0.53-0.73 m/s
 max_velocity: {mean: 0.75, std: 0.05, clip_low: 0.55, clip_high: 0.9}
 agent_radius: {mean: 0.38, std: 0.02, clip_low: 0.32, clip_high: 0.45}
 max_acceleration: {mean: 0.6, std: 0.1, clip_low: 0.3, clip_high: 1.0}

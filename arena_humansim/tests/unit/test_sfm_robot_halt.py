@@ -62,8 +62,8 @@ def test_an_avoiding_walker_keeps_its_speed_and_steers(pool_empty: Callable[...,
     assert f_rep[1] < 0.0  # pushed away from the robot on its left
 
 
-@pytest.mark.parametrize(("name", "halt"), [("blind_white_cane", True), ("blind_rolling_cane", True), ("adult", False), ("elder_rollator", False)])
-def test_the_cane_types_halt_for_robots(name: str, halt: bool) -> None:
+@pytest.mark.parametrize(("name", "halt"), [("blind_white_cane", True), ("blind_rolling_cane", True), ("patient_walking_frame", True), ("adult", False), ("elder_rollator", False), ("patient_iv_pole", False)])
+def test_the_cane_and_frame_types_halt_for_robots(name: str, halt: bool) -> None:
     sampled = sample_agent_type(load_agent_type_from_file(CONFIG_DIR / f"{name}.yaml"), np.random.default_rng(0))
     assert sampled.perception.robot_halt is halt
 

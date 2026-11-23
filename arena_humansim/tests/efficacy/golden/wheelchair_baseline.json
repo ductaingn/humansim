@@ -25,9 +25,9 @@
     "doorway": {
       "wheelchair_manual": {
         "success_rate": 1.0,
-        "time_to_goal_s": 12.100000000000001,
+        "time_to_goal_s": 10.825000000000001,
         "time_stuck_s": 0.025,
-        "path_efficiency": 0.9957589119800128,
+        "path_efficiency": 0.9948670073414778,
         "min_clearance_m": null,
         "min_clearance_worst_m": null,
         "max_wall_penetration_m": 0.0,
@@ -49,11 +49,11 @@
     "corridor_head_on_adult": {
       "wheelchair_manual": {
         "success_rate": 1.0,
-        "time_to_goal_s": 15.05,
-        "time_stuck_s": 0.05,
-        "path_efficiency": 0.9894707603033683,
-        "min_clearance_m": 2.7755575615628914e-17,
-        "min_clearance_worst_m": -5.551115123125783e-17,
+        "time_to_goal_s": 13.600000000000001,
+        "time_stuck_s": 0.025,
+        "path_efficiency": 0.9879502058036284,
+        "min_clearance_m": 4.163336342344337e-17,
+        "min_clearance_worst_m": 0.0,
         "max_wall_penetration_m": 0.0,
         "max_wall_penetration_worst_m": 0.0,
         "recovery_events": 0.0
@@ -73,10 +73,10 @@
     "corridor_head_on_robot": {
       "wheelchair_manual": {
         "success_rate": 1.0,
-        "time_to_goal_s": 16.4,
-        "time_stuck_s": 0.45,
-        "path_efficiency": 0.9624025833598909,
-        "min_clearance_m": -5.551115123125783e-17,
+        "time_to_goal_s": 14.925,
+        "time_stuck_s": 0.525,
+        "path_efficiency": 0.963644126424358,
+        "min_clearance_m": 0.0,
         "min_clearance_worst_m": -2.220446049250313e-16,
         "max_wall_penetration_m": 0.0,
         "max_wall_penetration_worst_m": 0.0,
@@ -97,11 +97,11 @@
     "crowd_crossing": {
       "wheelchair_manual": {
         "success_rate": 1.0,
-        "time_to_goal_s": 10.625,
-        "time_stuck_s": 0.025,
-        "path_efficiency": 0.960246798283006,
-        "min_clearance_m": -5.551115123125783e-17,
-        "min_clearance_worst_m": -1.6653345369377348e-16,
+        "time_to_goal_s": 9.075,
+        "time_stuck_s": 0.05,
+        "path_efficiency": 0.9599845773210423,
+        "min_clearance_m": 0.0,
+        "min_clearance_worst_m": -0.0002680026733221097,
         "max_wall_penetration_m": 0.0,
         "max_wall_penetration_worst_m": 0.0,
         "recovery_events": 0.0
@@ -121,9 +121,9 @@
     "corridor_u_turn": {
       "wheelchair_manual": {
         "success_rate": 1.0,
-        "time_to_goal_s": 21.075000000000003,
-        "time_stuck_s": 1.475,
-        "path_efficiency": 0.9881917050785679,
+        "time_to_goal_s": 19.375,
+        "time_stuck_s": 0.825,
+        "path_efficiency": 0.9461160270657178,
         "min_clearance_m": null,
         "min_clearance_worst_m": null,
         "max_wall_penetration_m": 0.0,
@@ -145,11 +145,11 @@
     "robot_parked": {
       "wheelchair_manual": {
         "success_rate": 1.0,
-        "time_to_goal_s": 13.15,
+        "time_to_goal_s": 11.8,
         "time_stuck_s": 0.025,
-        "path_efficiency": 0.9713855674473422,
-        "min_clearance_m": 0.10276952486313551,
-        "min_clearance_worst_m": 0.06887940985941032,
+        "path_efficiency": 0.9708168472194921,
+        "min_clearance_m": 0.10751542687028082,
+        "min_clearance_worst_m": 0.07097460428917135,
         "max_wall_penetration_m": 0.0,
         "max_wall_penetration_worst_m": 0.0,
         "recovery_events": 0.0

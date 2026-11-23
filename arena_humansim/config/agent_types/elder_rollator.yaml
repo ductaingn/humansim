@@ -3,12 +3,13 @@
 # Gait: profile walk_rollator (arena_runtime human profiles), fitted from the retargeted Kimodo clip
 # rollator (stride 1.10 s at 0.6 m/s); speed/lateral harmonics measured on the clip's root track.
 # Footprint: a 1.0 m capsule along the heading covers the body and the rollator ahead of it (0.57 m wide, 0.69 m deep).
-# Turning: a rollator is steered, not pivoted on the spot: wider turns and slower pivots than a free walker.
+# Turning: a rollator is steered, not pivoted on the spot: wider turns and slower pivots than a free walker, and no
+# sidesteps (along_heading); a sharp turn is made by pivoting while nearly stopped.
 name: elder_rollator
 extends: elder
 
-desired_velocity: {mean: 0.6, std: 0.05, clip_low: 0.45, clip_high: 0.75}
-max_velocity: {mean: 0.75, std: 0.05, clip_low: 0.6, clip_high: 0.9}
+desired_velocity: {mean: 0.75, std: 0.2, clip_low: 0.4, clip_high: 1.1}  # geriatric rollator users: 0.6-1.07 m/s
+max_velocity: {mean: 0.95, std: 0.1, clip_low: 0.6, clip_high: 1.3}
 agent_radius: {mean: 0.32, std: 0.01, clip_low: 0.3, clip_high: 0.35}
 max_acceleration: {mean: 0.5, std: 0.1, clip_low: 0.3, clip_high: 0.8}
 max_deceleration: {mean: 0.8, std: 0.1, clip_low: 0.5, clip_high: 1.2}
@@ -16,6 +17,8 @@ min_turning_radius: {mean: 0.6, std: 0.05, clip_low: 0.4, clip_high: 1.0}
 pivot_angular_velocity: {mean: 0.6, std: 0.1, clip_low: 0.4, clip_high: 0.9}
 
 locomotion:
+  kinematics: along_heading
+  recovery: {stall_after_s: 3.0, reverse_m: 0}
   cadence: {base: 0.4, per_speed: 0.8485, min: 0.4, max: 2.2}
   phase_warp: {split: 0.5772}
   speed_profile:

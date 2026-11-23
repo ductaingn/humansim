@@ -4,6 +4,8 @@
 # Gait: profile walk_walkingframe (arena_runtime human profiles), fitted from the retargeted Kimodo clip
 # walkingframe (cycle 1.9 s, 0.32 m per cycle); speed/lateral harmonics measured on the clip's root track.
 # Footprint: a 0.95 m capsule along the heading covers the body and the frame ahead of it (frame 0.58 m wide).
+# Motion: no sidesteps (along_heading), since moving sideways means lifting and resetting the frame; a robot it
+# perceives makes it stop (ahead) or slow down (beside, behind) rather than steer around.
 name: patient_walking_frame
 extends: elder
 
@@ -15,7 +17,12 @@ max_deceleration: {mean: 0.6, std: 0.1, clip_low: 0.3, clip_high: 1.0}
 min_turning_radius: {mean: 0.4, std: 0.05, clip_low: 0.2, clip_high: 0.8}
 pivot_angular_velocity: {mean: 0.5, std: 0.1, clip_low: 0.3, clip_high: 0.8}
 
+perception:
+  robot_response: halt
+
 locomotion:
+  kinematics: along_heading
+  recovery: {stall_after_s: 3.0, reverse_m: 0}
   cadence: {base: 0.4, per_speed: 0.7536, min: 0.4, max: 2.2}
   phase_warp: {split: 0.5429}
   speed_profile:

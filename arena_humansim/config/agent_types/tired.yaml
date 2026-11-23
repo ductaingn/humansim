@@ -8,6 +8,8 @@ desired_velocity: {mean: 0.75, std: 0.05, clip_low: 0.55, clip_high: 0.9}
 max_velocity: {mean: 1.0, std: 0.05, clip_low: 0.8, clip_high: 1.2}
 perception:
   vision_fov: {mean: 120.0, std: 10.0, clip_low: 80.0, clip_high: 160.0}
+local_planner_params:
+  relaxation_time: {mean: 0.7, std: 0.08, clip_low: 0.4, clip_high: 1.2}  # assumption: slower to react than an adult (0.5 s)
 
 locomotion:
   cadence: {base: 0.4, per_speed: 0.5260, min: 0.4, max: 2.2}

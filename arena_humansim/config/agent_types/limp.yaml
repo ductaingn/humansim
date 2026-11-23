@@ -6,6 +6,10 @@ extends: adult
 
 desired_velocity: {mean: 0.65, std: 0.05, clip_low: 0.5, clip_high: 0.8}
 max_velocity: {mean: 0.9, std: 0.05, clip_low: 0.7, clip_high: 1.1}
+# assumptions: starting, stopping and pivoting load the painful leg, so all are slower than an adult's (1.5 / 2.5, 2.0 rad/s)
+max_acceleration: {mean: 0.8, std: 0.1, clip_low: 0.4, clip_high: 1.2}
+max_deceleration: {mean: 1.5, std: 0.2, clip_low: 0.8, clip_high: 2.2}
+pivot_angular_velocity: {mean: 1.2, std: 0.15, clip_low: 0.6, clip_high: 2.0}
 
 locomotion:
   cadence: {base: 0.4, per_speed: 0.4249, min: 0.4, max: 2.2}

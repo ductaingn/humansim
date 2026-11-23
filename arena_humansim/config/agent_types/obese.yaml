@@ -8,6 +8,7 @@ desired_velocity: {mean: 0.85, std: 0.06, clip_low: 0.6, clip_high: 1.0}
 max_velocity: {mean: 1.1, std: 0.05, clip_low: 0.9, clip_high: 1.3}
 agent_radius: {mean: 0.34, std: 0.02, clip_low: 0.28, clip_high: 0.42}
 max_acceleration: {mean: 0.9, std: 0.1, clip_low: 0.4, clip_high: 1.5}
+max_deceleration: {mean: 1.5, std: 0.2, clip_low: 0.8, clip_high: 2.2}  # assumption, in line with the lower acceleration
 
 locomotion:
   cadence: {base: 0.4, per_speed: 0.3567, min: 0.4, max: 2.2}

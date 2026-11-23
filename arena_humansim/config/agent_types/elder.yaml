@@ -8,10 +8,11 @@ min_turning_radius: {mean: 0.5, std: 0.05, clip_low: 0.2, clip_high: 1.2}
 pivot_angular_velocity: {mean: 1.5, std: 0.15, clip_low: 0.8, clip_high: 3.0}
 
 perception:
-  vision_range: {mean: 3.5, std: 0.8, clip_low: 1.0, clip_high: 8.0}
+  vision_range: {mean: 4.0, std: 0.8, clip_low: 1.0, clip_high: 8.0}  # avoidance starts about 1 m later than an adult's (5 m)
   vision_fov: {mean: 140.0, std: 15.0, clip_low: 60.0, clip_high: 220.0}
 
 local_planner_params:
   relaxation_time: {mean: 0.8, std: 0.1, clip_low: 0.4, clip_high: 1.5}
-  repulsion_strength: {mean: 2.8, std: 0.3, clip_low: 1.0, clip_high: 6.0}
-  repulsion_range: {mean: 0.4, std: 0.05, clip_low: 0.15, clip_high: 1.0}
+  # weaker than an adult's (2.1 / 0.3): older adults pass closer (0.79 m vs 0.93 m) and leave most of the avoiding to the other person
+  repulsion_strength: {mean: 1.6, std: 0.2, clip_low: 0.5, clip_high: 4.0}
+  repulsion_range: {mean: 0.3, std: 0.04, clip_low: 0.1, clip_high: 0.8}
