@@ -31,4 +31,4 @@ pose:
   run: {same_as: walk}
   idle: {base: stand_walkingframe}  # stopped, the hands stay on the grips so the aid stays planted
 
-device: {kind: walking_frame, model: Common/Object/WalkerFitted}
+device: {kind: walking_frame, bone: prop}  # the WalkerFitted mesh on the prop joint of Hospital/patient_female_asian_old_walkingframe
