@@ -14,6 +14,7 @@ perception:
   vision_fov: {mean: 120.0, std: 5.0, clip_low: 100.0, clip_high: 140.0}
   proximity_sense: {mean: 1.2, std: 0.05, clip_low: 1.0, clip_high: 1.4}
   vision_occlusion: true
+  robot_response: halt  # a robot they sense stops them (ahead) or slows them (beside, behind); they do not steer around it
 max_acceleration: {mean: 0.8, std: 0.1, clip_low: 0.4, clip_high: 1.2}
 
 locomotion:

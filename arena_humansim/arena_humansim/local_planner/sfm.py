@@ -34,6 +34,9 @@ _DEFAULT_CLASS_GAINS: dict[tuple[str, str], tuple[float, float]] = {
     ("wheelchair", "robot"): (1.5, 1.3),
 }
 
+# robot_response "halt": the speed kept while a perceived robot is beside or behind (ahead: stop). An assumption, no measured value.
+HALT_SLOW_FACTOR = 0.5
+
 _WALL_CUTOFF_RANGES = 28.0
 _WALL_QUERY_CAPACITY = 64
 
@@ -347,10 +350,7 @@ class SFMPlanner(LocalPlanner):
         dist_goal_safe = np.maximum(dist_goal, _EPS)
         e_goal = d_goal / dist_goal_safe
 
-        f_att = (desired_v[:, None] * e_goal - vel) / relax[:, None]
-        at_goal = (dist_goal[:, 0] < _EPS) | ~has_goal
-        f_att[at_goal] = 0.0
-
+        speed_scale = np.ones(n, dtype=np.float64)
         f_rep = np.zeros((n, 2), dtype=np.float64)
         indptr = pool.neighbor_indptr
         indices = pool.neighbor_indices
@@ -388,6 +388,14 @@ class SFMPlanner(LocalPlanner):
                 robot_pairs = pair_obs[nbr_is_robot]
                 eff_strength[nbr_is_robot] *= pool.robot_repulsion_gain[robot_pairs]
                 eff_range[nbr_is_robot] *= pool.robot_reaction_gain[robot_pairs]
+                halting = nbr_is_robot & pool.robot_halt[pair_obs]
+                if np.any(halting):
+                    eff_strength[halting] = 0.0  # no steering around the robot
+                    obs = pair_obs[halting]
+                    to_robot = pos[pair_nbr[halting]] - pos[obs]
+                    heading = pool.theta[obs]
+                    ahead = to_robot[:, 0] * np.cos(heading) + to_robot[:, 1] * np.sin(heading) > 0.0
+                    np.minimum.at(speed_scale, obs, np.where(ahead, 0.0, HALT_SLOW_FACTOR))
             eff_range = np.maximum(eff_range, 1e-4)
             magnitudes = eff_strength * np.exp((r_ij - dists) / eff_range)
 
@@ -398,6 +406,10 @@ class SFMPlanner(LocalPlanner):
 
             pair_forces = magnitudes[:, None] * normals
             np.add.at(f_rep, pair_obs, pair_forces)
+
+        f_att = ((desired_v * speed_scale)[:, None] * e_goal - vel) / relax[:, None]
+        at_goal = (dist_goal[:, 0] < _EPS) | ~has_goal
+        f_att[at_goal] = 0.0
 
         f_wall = self._compute_wall_forces_vectorized(pos, radii, pool.theta[:n], pool.axial_offset[:n])
 
@@ -479,9 +491,7 @@ class SFMPlanner(LocalPlanner):
         e_goal_x = dx_goal / dist_goal
         e_goal_y = dy_goal / dist_goal
 
-        f_att_x = (params.desired_velocity * e_goal_x - cur_vx) / lp["relaxation_time"]
-        f_att_y = (params.desired_velocity * e_goal_y - cur_vy) / lp["relaxation_time"]
-
+        speed_scale = 1.0
         f_rep_x = 0.0
         f_rep_y = 0.0
         if belief is not None:
@@ -517,6 +527,11 @@ class SFMPlanner(LocalPlanner):
                     eff_r = eff_r.copy()
                     eff_s[is_robot_nbr] *= rep_gain
                     eff_r[is_robot_nbr] *= react_gain
+                    if agent.params.perception.robot_halt:
+                        eff_s[is_robot_nbr] = 0.0  # no steering around the robot
+                        heading = agent.state.pose.theta
+                        ahead = -diff[is_robot_nbr, 0] * math.cos(heading) - diff[is_robot_nbr, 1] * math.sin(heading) > 0.0
+                        speed_scale = 0.0 if np.any(ahead) else HALT_SLOW_FACTOR
                 eff_r = np.maximum(eff_r, 1e-4)
                 magnitudes = eff_s * np.exp((r_ij - dists) / eff_r)
 
@@ -527,6 +542,9 @@ class SFMPlanner(LocalPlanner):
                 forces = magnitudes[:, np.newaxis] * normals
                 f_rep_x = float(forces[:, 0].sum())
                 f_rep_y = float(forces[:, 1].sum())
+
+        f_att_x = (params.desired_velocity * speed_scale * e_goal_x - cur_vx) / lp["relaxation_time"]
+        f_att_y = (params.desired_velocity * speed_scale * e_goal_y - cur_vy) / lp["relaxation_time"]
 
         f_wall_x = 0.0
         f_wall_y = 0.0

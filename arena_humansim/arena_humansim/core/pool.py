@@ -75,6 +75,7 @@ class AgentPool:
         self.robot_repulsion_gain = np.ones(capacity, dtype=np.float64)
         self.robot_reaction_gain = np.ones(capacity, dtype=np.float64)
         self.robot_blind = np.zeros(capacity, dtype=np.bool_)
+        self.robot_halt = np.zeros(capacity, dtype=np.bool_)
 
         self.goal_pos = np.zeros((capacity, 2), dtype=np.float64)
         self.has_goal = np.zeros(capacity, dtype=np.bool_)
@@ -178,6 +179,7 @@ class AgentPool:
         self.robot_repulsion_gain[i] = perc.robot_repulsion_gain
         self.robot_reaction_gain[i] = perc.robot_reaction_gain
         self.robot_blind[i] = perc.robot_blind
+        self.robot_halt[i] = perc.robot_halt
 
     def swap_remove(self, agent_id: int) -> int | None:
         idx = self._id_to_idx.pop(agent_id)
@@ -204,6 +206,7 @@ class AgentPool:
                 self.robot_repulsion_gain,
                 self.robot_reaction_gain,
                 self.robot_blind,
+                self.robot_halt,
                 self.has_goal,
                 self.has_terminal,
                 self.goal_theta,
@@ -323,6 +326,7 @@ class AgentPool:
         self.robot_repulsion_gain = _resize_1d(self.robot_repulsion_gain)
         self.robot_reaction_gain = _resize_1d(self.robot_reaction_gain)
         self.robot_blind = _resize_1d(self.robot_blind)
+        self.robot_halt = _resize_1d(self.robot_halt)
         self.goal_pos = _resize_2d(self.goal_pos)
         self.has_goal = _resize_1d(self.has_goal)
         self.terminal_pos = _resize_2d(self.terminal_pos)

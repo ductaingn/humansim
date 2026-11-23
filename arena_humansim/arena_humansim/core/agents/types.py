@@ -471,6 +471,9 @@ class SequenceDef:
     tune: TuneDef | None = None
 
 
+ROBOT_RESPONSES = ("avoid", "halt")  # a perceived robot: steer around it, or brake (ahead) / slow (beside, behind) without steering
+
+
 @attrs.frozen
 class PerceptionDist:
     vision_range: ParamDist = attrs.field(default=ParamDist(5.0, 0.5), converter=_as_paramdist)
@@ -478,6 +481,7 @@ class PerceptionDist:
     proximity_sense: ParamDist = attrs.field(default=ParamDist(1.0, 0.2, clip_low=0.5, clip_high=2.0), converter=_as_paramdist)
     vision_occlusion: bool = True
     robot_awareness: AwarenessSpec = attrs.field(default=AWARENESS_PRESETS["normal"], converter=as_awareness_spec)
+    robot_response: str = attrs.field(default="avoid", validator=attrs.validators.in_(ROBOT_RESPONSES))
 
 
 KINEMATICS = ("holonomic", "along_heading")
@@ -591,6 +595,7 @@ class SampledPerception:
     robot_repulsion_gain: float = 1.0
     robot_reaction_gain: float = 1.0
     robot_blind: bool = False
+    robot_halt: bool = False
 
 
 @attrs.frozen
@@ -733,6 +738,7 @@ def sample_agent_type(
             vision_fov_sd=agent_type.perception.vision_fov.std,
             repulsion_rel_sd=_relative_spread(awareness_dists["repulsion_strength"]),
             reaction_rel_sd=_relative_spread(awareness_dists["repulsion_range"]),
+            robot_halt=agent_type.perception.robot_response == "halt",
         ),
         sample_awareness(agent_type.perception.robot_awareness, rng),
     )

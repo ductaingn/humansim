@@ -112,6 +112,7 @@ def test_record_spawn_emits_expected_keys(tmp_path: Path) -> None:
         "robot_repulsion_gain": pytest.approx(1.0),
         "robot_reaction_gain": pytest.approx(1.0),
         "robot_blind": False,
+        "robot_halt": False,
     }
     assert params["local_planner_params"]["relaxation_time"] == pytest.approx(0.5)
     assert params["local_planner_params"]["repulsion_strength"] == pytest.approx(2.1)

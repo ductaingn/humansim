@@ -28,6 +28,7 @@ Perception (`perception:`):
   - `reaction`: gain on the SFM repulsion range B against robots, `1 + sigmas x (std / mean)` of `repulsion_range` (same fallback), floored at 0.05. A larger B starts avoiding robots earlier.
   - `blind: true` removes robots from perception entirely.
   - The former scalar keys (a numeric `robot_awareness`, `robot_repulsion_gain`, `robot_fov_gain` and `robot_reaction_gain`) are removed; the shifts above replace them.
+- `robot_response` - what the agent does with a robot it perceives (SFM planner). `avoid` (default) steers around it. `halt` never steers around it: the agent brakes to a stop while the robot is ahead of its heading and walks at `HALT_SLOW_FACTOR` (0.5) of its desired speed while the robot is beside or behind it, until the robot leaves its perception. Used by the long-cane users, who notice a robot only at close range and rely on others to give way.
 
 Built-in presets for robot awareness: `blind`, `distracted`, `normal`, `interested`, `aggressive`, `scared`. Their shifts are listed under the archetypes below.
 
