@@ -37,6 +37,7 @@ FORWARDED_PARAMS = (
     params.COLLISION,
     params.OCCLUSION,
     params.SEED,
+    params.FRAME_ID,
     params.STRICT_RECORDING,
     params.TRIAL_ID,
 )

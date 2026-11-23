@@ -178,7 +178,7 @@ ros2 launch arena_humansim arena_humansim.launch.py \
   rviz:=true
 ```
 
-Every node param that the launch file only forwards (`seed`, `ticks`, `time`, `rtf`, the module selectors, `robot_policy`, `robot_shutdown`, `force_waypoint_mode`, `force_local_planner`, `strict_recording`, `trial_id`) is a launch argument generated from its `Param` in `arena_humansim/params.py`, with the same name, description and choices. Empty means the node default from the parameters table below. `mode`, `scenario`, `markers`, `record`, `record_dir`, `render`, `render_format`, `rviz`, `namespace` and `use_sim_time` are launch-side arguments. Any other launch arg is forwarded to the node as the param of the same name, e.g. `global_planner.resolution:=0.1` or `local_planner.relaxation_time:=0.7`. The value is typed by YAML rules, so write a double with a decimal point. A name the node does not declare is ignored.
+Every node param that the launch file only forwards (`seed`, `ticks`, `time`, `rtf`, the module selectors, `robot_policy`, `robot_shutdown`, `force_waypoint_mode`, `force_local_planner`, `strict_recording`, `trial_id`, `frame_id`) is a launch argument generated from its `Param` in `arena_humansim/params.py`, with the same name, description and choices. Empty means the node default from the parameters table below. `mode`, `scenario`, `markers`, `record`, `record_dir`, `render`, `render_format`, `rviz`, `namespace` and `use_sim_time` are launch-side arguments. Any other launch arg is forwarded to the node as the param of the same name, e.g. `global_planner.resolution:=0.1` or `local_planner.relaxation_time:=0.7`. The value is typed by YAML rules, so write a double with a decimal point. A name the node does not declare is ignored.
 
 Scenarios (world objects, agents, flow, walls) are authored under [`config/scenarios/`](arena_humansim/config/scenarios/README.md).
 
@@ -229,6 +229,7 @@ Config format and stage semantics: [`config/benchmark/README.md`](arena_humansim
 | `animation` | `noop` | Animation module name |
 | `collision` | `wall_projection` | Collision resolver module name |
 | `occlusion` | `bitmap` | Occlusion module name |
+| `frame_id` | `map` | TF frame stamped on every published pose, wall and marker, the frame the engine runs in |
 | `waypoint_threshold` | `0.1` | Distance (m) at which a waypoint counts as reached |
 | `min_speed_for_heading` | `0.1` | Speed (m/s) below which an agent keeps its heading |
 | `arrival_r_enter`, `arrival_r_exit` | `0.15`, `0.30` | Radii (m) at which an agent latches onto its goal and releases it |

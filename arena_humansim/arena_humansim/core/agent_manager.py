@@ -360,6 +360,7 @@ class AgentManager(TimeNode):
         self._dt = self._float_param("dt")
         self._bt_tick_interval = self._int_param("bt_tick_interval")
         self._mode = str(self.get_parameter("mode").value)
+        self._frame_id = str(self.get_parameter("frame_id").value)
         log_dir = str(self.get_parameter("log_dir").value)
         replay_mode = str(self.get_parameter("replay_mode").value)
         self._load_tunables()
@@ -511,7 +512,7 @@ class AgentManager(TimeNode):
         self._prone: set[int] = set()
         self._parked_from: dict[int, tuple[float, float, float]] = {}
         self._rising: dict[int, tuple[float, float, float, int]] = {}
-        self._marker_pub = MarkerPublisher(self) if self._publish_markers > 0 else None
+        self._marker_pub = MarkerPublisher(self, self._frame_id) if self._publish_markers > 0 else None
         self._tick_count: int = 0
         self._sim_time_ns: int = 0
         self._subsystem_epoch_ns: int = 0
@@ -860,7 +861,7 @@ class AgentManager(TimeNode):
             if self._marker_pub is not None:
                 self._marker_pub.forget_all()
         if level > 0 and self._marker_pub is None:
-            self._marker_pub = MarkerPublisher(self)
+            self._marker_pub = MarkerPublisher(self, self._frame_id)
 
     def _set_rtf(self, rtf: float) -> None:
         if rtf == self._rtf:
@@ -2482,7 +2483,7 @@ class AgentManager(TimeNode):
             ns = self._subsystem_epoch_ns + self._sim_time_ns
         else:
             ns = self._sim_time_ns
-        header = Header(frame_id="map")
+        header = Header(frame_id=self._frame_id)
         header.stamp.sec = int(ns // int(1e9))
         header.stamp.nanosec = int(ns % int(1e9))
         return header
@@ -3287,8 +3288,7 @@ class AgentManager(TimeNode):
 
     def _publish_world_geometry(self) -> None:
         msg = WorldGeometryMsg()
-        msg.header.frame_id = "map"
-        msg.header.stamp = self._header().stamp
+        msg.header = self._header()
 
         for name, ((sx, sy), (ex, ey)) in self._walls.items():
             msg.wall_names.append(name)  # pyright: ignore[reportAttributeAccessIssue]
