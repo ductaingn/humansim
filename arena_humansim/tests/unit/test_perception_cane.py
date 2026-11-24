@@ -180,7 +180,7 @@ def test_declaring_the_new_perception_fields_leaves_every_other_sampled_value_un
     assert b.perception.cane_reach > 0.0 and b.perception.detection_delay > 0.0
 
 
-def _notice_distance(agent_type: AgentType) -> float:
+def _notice_distance(agent_type: AgentType, seed: int = 3) -> float:
     """Distance at which a person of `agent_type`, facing +x, first lists a robot driving at them from 8 m at 1 m/s."""
     from typing import Any, cast
 
@@ -190,7 +190,7 @@ def _notice_distance(agent_type: AgentType) -> float:
         state = AgentState(agent_id=aid, pose=Pose2D(x=x, y=0.0, theta=0.0), velocity=(0.0, 0.0), desired_velocity=0.0)
         return BaseAgent(state=state, params=cast(Any, params), global_planner=cast(Any, None), local_planner=cast(Any, None), animation=cast(Any, None))
 
-    rng = np.random.default_rng(3)
+    rng = np.random.default_rng(seed)
     pool = AgentPool(capacity=4)
     pool.add_agent(agent(1, 0.0, sample_agent_type(agent_type, rng)))
     pool.add_agent(agent(2, 8.0, sample_agent_type(AgentType(name="robot"), rng)))
@@ -210,10 +210,12 @@ def test_in_a_head_on_encounter_the_cane_user_notices_the_robot_later_than_the_a
     builtin = BUILTIN_AGENTS
     adult = _notice_distance(builtin["adult"])
     cane = _notice_distance(builtin["blind_white_cane"])
-    rollator = _notice_distance(builtin["elder_rollator"])
     assert adult > 4.0, "the adult sees the robot at its vision range"
     assert 0.7 < cane < 0.95, "the cane finds the robot at 1.05 m plus its radius and lists it half a second later"
-    assert rollator < adult
+    seeds = range(10)
+    rollator_mean = np.mean([_notice_distance(builtin["elder_rollator"], seed) for seed in seeds])
+    adult_mean = np.mean([_notice_distance(builtin["adult"], seed) for seed in seeds])
+    assert rollator_mean < adult_mean, "older adults see a robot later on average (4 m against 5 m), one draw can tie"
 
 
 def test_the_per_agent_path_senses_a_robot_ahead_with_the_cane_and_not_one_behind() -> None:

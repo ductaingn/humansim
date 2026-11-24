@@ -18,7 +18,6 @@ min_turning_radius: {mean: 0.4, std: 0.05, clip_low: 0.2, clip_high: 0.8}  # est
 pivot_angular_velocity: {mean: 0.5, std: 0.1, clip_low: 0.3, clip_high: 0.8}  # estimate, see SOURCES.md
 
 perception:
-  detection_delay: 0.5  # estimate, see SOURCES.md
   robot_response: halt
 
 locomotion:

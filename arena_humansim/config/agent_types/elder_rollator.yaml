@@ -16,9 +16,6 @@ max_deceleration: {mean: 0.8, std: 0.1, clip_low: 0.5, clip_high: 1.2}  # estima
 min_turning_radius: {mean: 0.6, std: 0.05, clip_low: 0.4, clip_high: 1.0}  # estimate, see SOURCES.md
 pivot_angular_velocity: {mean: 0.6, std: 0.1, clip_low: 0.4, clip_high: 0.9}  # estimate, see SOURCES.md
 
-perception:
-  detection_delay: 0.5  # estimate, see SOURCES.md
-
 locomotion:
   kinematics: along_heading
   recovery: {stall_after_s: 3.0}

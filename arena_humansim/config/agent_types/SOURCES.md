@@ -37,7 +37,7 @@ The `yaml` field is where the value lives in the agent-type file.
 | IV stand | stopping (`max_deceleration`) | 1.5 ± 0.2 | m/s² | none | — | estimate, inherited from `elder` |
 | IV stand | footprint (`agent_radius`) | 0.38 ± 0.02 | m | none | — | estimate |
 | rollator, walking frame, IV stand | sight (`vision_range`, `vision_fov`) | 3.5 ± 0.8 m, 140 ± 15° | | none | — | estimate, inherited from `elder` |
-| rollator, walking frame, IV stand | detection delay (`detection_delay`) | 0.5 | s | older adults start avoiding later and pass closer: 0.79 ± 0.18 m versus 0.93 ± 0.17 m between young adults [Rapos 2021] | older adults about 68 years, young adults about 23 | estimate |
+| rollator, walking frame, IV stand | detection delay (`detection_delay`) | not set | | the later avoidance of older adults comes from the `elder` type they extend (a shorter `vision_range`, weaker repulsion, see that row), so a delay here would count it twice. Older adults pass closer: 0.79 ± 0.18 m versus 0.93 ± 0.17 m between young adults [Rapos 2021] | older adults about 68 years, young adults about 23 | — |
 | limp | comfortable speed (`desired_velocity`) | 0.86 ± 0.12 | m/s | adult 1.1 m/s × 0.78: hip OA walks 22% slower than controls (−0.26 m/s, 95% CI −0.32 to −0.20; controls 1.24 m/s) [Baily 2023]; an earlier review found 26% [Constantinou 2014]. The SD is the adult's | meta-analysis of 33 studies | derived |
 | limp | maximum speed (`max_velocity`) | 1.17 ± 0.1 | m/s | adult 1.5 m/s × 0.78, same source | | derived |
 | limp | acceleration, stopping (`max_acceleration`, `max_deceleration`) | 1.5 ± 0.1, 2.5 ± 0.2 | m/s² | none | — | estimate, inherited from `adult` |

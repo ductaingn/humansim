@@ -10,9 +10,6 @@ agent_radius: {mean: 0.38, std: 0.02, clip_low: 0.32, clip_high: 0.45}  # estima
 max_acceleration: {mean: 0.6, std: 0.1, clip_low: 0.3, clip_high: 1.0}  # estimate, see SOURCES.md
 min_turning_radius: {mean: 0.6, std: 0.05, clip_low: 0.3, clip_high: 1.2}  # estimate, see SOURCES.md
 
-perception:
-  detection_delay: 0.5  # estimate, see SOURCES.md
-
 locomotion:
   cadence: {base: 0.4, per_speed: 0.3482, min: 0.4, max: 2.2}
   phase_warp: {split: 0.5}
