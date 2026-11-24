@@ -39,7 +39,7 @@ def marker_publisher(rclpy_context: object) -> Iterator[object]:
 
     node = TimeNode("force_planner_markers_test")
     try:
-        yield MarkerPublisher(node)
+        yield MarkerPublisher(node, "map")
     finally:
         node.destroy_node()
 
