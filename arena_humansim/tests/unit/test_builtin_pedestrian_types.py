@@ -4,7 +4,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from arena_humansim.core.agents import loader
+from arena_humansim.core.agents import BUILTIN_AGENTS, loader
 from arena_humansim.core.agents.types import STAIRS_KINDS, AgentType, sample_agent_type
 from arena_humansim.utils.scenario_loader import converter
 
@@ -95,3 +95,11 @@ def test_a_stair_effort_mapping_is_clipped_to_1_and_3_unless_it_sets_its_own_cli
     own = converter.structure({"name": "x", "stair_effort": {"mean": 4.0, "clip_low": 3.5, "clip_high": 5.0}}, AgentType)
     assert sample_agent_type(own, np.random.default_rng(0)).stair_effort == 4.0
     assert sample_agent_type(converter.structure({"name": "x", "stair_effort": 2.0}, AgentType), np.random.default_rng(0)).stair_effort == 2.0
+
+
+@pytest.mark.parametrize("name", sorted(BUILTIN_AGENTS))
+def test_no_sampled_top_speed_is_below_the_walking_speed(name: str) -> None:
+    rng = np.random.default_rng(0)
+    for _ in range(500):
+        p = sample_agent_type(BUILTIN_AGENTS[name], rng)
+        assert p.max_velocity >= p.desired_velocity

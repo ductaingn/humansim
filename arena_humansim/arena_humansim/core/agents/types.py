@@ -726,7 +726,7 @@ def sample_agent_type(
 
     desired_velocity = _sample_dist(agent_type.desired_velocity, rng)
     agent_radius = _sample_dist(agent_type.agent_radius, rng)
-    max_velocity = _sample_dist(agent_type.max_velocity, rng)
+    max_velocity = max(_sample_dist(agent_type.max_velocity, rng), desired_velocity)  # drawn apart, a top speed can fall below the walking speed
     max_acceleration = _sample_dist(agent_type.max_acceleration, rng)
     max_deceleration = _sample_dist(agent_type.max_deceleration, rng)
     min_turning_radius = _sample_dist(agent_type.min_turning_radius, rng)
