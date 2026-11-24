@@ -23,7 +23,6 @@ perception:
 
 locomotion:
   kinematics: along_heading
-  recovery: {stall_after_s: 3.0}
   cadence: {base: 0.4, per_speed: 0.7536, min: 0.4, max: 2.2}
   phase_warp: {split: 0.5429}
   speed_profile:
