@@ -17,8 +17,8 @@ from arena_humansim.utils.types import Pose2D
 CONFIG_DIR = Path(__file__).resolve().parents[2] / "config" / "agent_types"
 
 
-def _pool(pool_empty: Callable[..., AgentPool], agent_factory: Callable[..., BaseAgent], halt: bool, robot: tuple[float, float]) -> tuple[AgentPool, SFMPlanner]:
-    """A walker at the origin heading +x to (10, 0), and a robot it perceives."""
+def _pool(pool_empty: Callable[..., AgentPool], agent_factory: Callable[..., BaseAgent], halt: bool, robot: tuple[float, float], robot_vel: tuple[float, float] = (-0.5, 0.0)) -> tuple[AgentPool, SFMPlanner]:
+    """A walker at the origin heading +x to (10, 0), and a robot it perceives, driving at robot_vel."""
     pool = pool_empty(capacity=8)
     planner = SFMPlanner()
     planner.attach(pool)
@@ -30,6 +30,7 @@ def _pool(pool_empty: Callable[..., AgentPool], agent_factory: Callable[..., Bas
     pool.add_agent(agent_factory(agent_id=2, x=robot[0], y=robot[1]))
     pool.kind[1] = KIND_ROBOT
     pool.policy_idx[1] = 0
+    pool.vel[1] = robot_vel
     pool.set_goals({1: Pose2D(x=10.0, y=0.0)})
     pool.set_neighbor_csr(np.array([0, 1, 1], dtype=np.int32), np.array([1], dtype=np.int32))
     return pool, planner
@@ -47,6 +48,21 @@ def test_a_halting_walker_stops_for_a_robot_ahead_without_steering(pool_empty: C
     target, f_rep = _target_speed(pool, planner)
     assert target == pytest.approx(0.0)
     assert np.allclose(f_rep, 0.0)
+
+
+def test_a_halting_walker_slows_for_a_moving_robot_ahead_but_out_of_its_path(pool_empty: Callable[..., AgentPool], agent_factory: Callable[..., BaseAgent]) -> None:
+    pool, planner = _pool(pool_empty, agent_factory, halt=True, robot=(2.0, 1.6))
+    target, f_rep = _target_speed(pool, planner)
+    assert target == pytest.approx(HALT_SLOW_FACTOR * pool.desired_vel[0])
+    assert np.allclose(f_rep, 0.0)
+
+
+def test_a_halting_walker_steers_around_a_robot_that_stands_still(pool_empty: Callable[..., AgentPool], agent_factory: Callable[..., BaseAgent]) -> None:
+    pool, planner = _pool(pool_empty, agent_factory, halt=True, robot=(0.8, 0.3), robot_vel=(0.0, 0.0))
+    target, f_rep = _target_speed(pool, planner)
+    assert target == pytest.approx(pool.desired_vel[0]), "a parked robot may never move off, so it is not waited for"
+    assert f_rep[1] < 0.0, "pushed away from the robot on its left, like any obstacle"
+    assert not pool.robot_halted[0]
 
 
 def test_a_halting_walker_slows_for_a_robot_behind(pool_empty: Callable[..., AgentPool], agent_factory: Callable[..., BaseAgent]) -> None:

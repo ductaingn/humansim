@@ -34,8 +34,22 @@ _DEFAULT_CLASS_GAINS: dict[tuple[str, str], tuple[float, float]] = {
     ("wheelchair", "robot"): (1.5, 1.3),
 }
 
-# robot_response "halt": share of the desired speed kept while a perceived robot is beside or behind (assumed, not measured).
+# robot_response "halt" (assumed, not measured): a walker waits for a moving robot in its path, walks at HALT_SLOW_FACTOR
+# of its speed while a moving robot is near but out of its path, and steers around a robot that stands still like any obstacle.
 HALT_SLOW_FACTOR = 0.5
+HALT_PATH_MARGIN = 0.3  # m beyond the two radii: a robot ahead closer than this to the walker's line is in its path
+HALT_MOVING_SPEED = 0.05  # m/s: a slower robot is not waited for, it may never move off
+
+
+def _halt_response(diff: np.ndarray, heading: np.ndarray, clearance: np.ndarray, robot_speed: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """For a halting walker and each robot it perceives (diff = walker - robot): whether the robot is waited for (it moves),
+    and the share of the desired speed kept for it: 0 while it is in the walker's path ahead, HALT_SLOW_FACTOR otherwise."""
+    cos_h, sin_h = np.cos(heading), np.sin(heading)
+    along = -(diff[:, 0] * cos_h + diff[:, 1] * sin_h)
+    lateral = np.abs(diff[:, 1] * cos_h - diff[:, 0] * sin_h)
+    in_path = (along > 0.0) & (lateral < clearance + HALT_PATH_MARGIN)
+    return robot_speed > HALT_MOVING_SPEED, np.where(in_path, 0.0, HALT_SLOW_FACTOR)
+
 
 _WALL_CUTOFF_RANGES = 28.0
 _WALL_QUERY_CAPACITY = 64
@@ -388,13 +402,13 @@ class SFMPlanner(LocalPlanner):
                 robot_pairs = pair_obs[nbr_is_robot]
                 eff_strength[nbr_is_robot] *= pool.robot_repulsion_gain[robot_pairs]
                 eff_range[nbr_is_robot] *= pool.robot_reaction_gain[robot_pairs]
-                halting = nbr_is_robot & pool.robot_halt[pair_obs]
-                if np.any(halting):
-                    eff_strength[halting] = 0.0  # no steering around the robot
+                halting = np.flatnonzero(nbr_is_robot & pool.robot_halt[pair_obs])
+                if halting.size > 0:
                     obs = pair_obs[halting]
-                    heading = pool.theta[obs]
-                    ahead = normals[halting, 0] * np.cos(heading) + normals[halting, 1] * np.sin(heading) < 0.0
-                    np.minimum.at(speed_scale, obs, np.where(ahead, 0.0, HALT_SLOW_FACTOR))
+                    robot_speed = np.hypot(pool.vel[pair_nbr[halting], 0], pool.vel[pair_nbr[halting], 1])
+                    waits, scale = _halt_response(diff[halting], pool.theta[obs], r_ij[halting], robot_speed)
+                    eff_strength[halting[waits]] = 0.0  # no steering around a robot it waits for
+                    np.minimum.at(speed_scale, obs[waits], scale[waits])
             eff_range = np.maximum(eff_range, 1e-4)
             magnitudes = eff_strength * np.exp((r_ij - dists) / eff_range)
 
@@ -528,10 +542,12 @@ class SFMPlanner(LocalPlanner):
                     eff_s[is_robot_nbr] *= rep_gain
                     eff_r[is_robot_nbr] *= react_gain
                     if agent.params.perception.robot_halt:
-                        eff_s[is_robot_nbr] = 0.0  # no steering around the robot
-                        heading = agent.state.pose.theta
-                        ahead = diff[is_robot_nbr, 0] * math.cos(heading) + diff[is_robot_nbr, 1] * math.sin(heading) < 0.0
-                        speed_scale = 0.0 if np.any(ahead) else HALT_SLOW_FACTOR
+                        robots = np.flatnonzero(is_robot_nbr)
+                        robot_speed = np.array([math.hypot(*neighbors[k].velocity) for k in robots])
+                        heading = np.full(robots.size, agent.state.pose.theta)
+                        waits, scale = _halt_response(diff[robots], heading, np.full(robots.size, r_ij), robot_speed)
+                        eff_s[robots[waits]] = 0.0  # no steering around a robot it waits for
+                        speed_scale = float(scale[waits].min(initial=1.0))
                 eff_r = np.maximum(eff_r, 1e-4)
                 magnitudes = eff_s * np.exp((r_ij - dists) / eff_r)
 
