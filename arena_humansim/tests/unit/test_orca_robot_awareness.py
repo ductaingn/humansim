@@ -198,38 +198,23 @@ def test_orca_not_yielding_pedestrian_keeps_its_course_at_the_robot(
     assert abs(pool.vel[0, 1]) < 1e-4
 
 
-def test_orca_hearing_and_cane_reach_extend_the_robot_cutoff_beyond_sight(
+def test_orca_cane_reach_extends_the_robot_cutoff_beyond_sight(
     pool_empty: Callable[..., AgentPool],
     agent_factory: Callable[..., BaseAgent],
 ) -> None:
     pool = _head_on(pool_empty, agent_factory, 1.0)
     pool.vision_range[0] = 0.0
-    pool.robot_loudness = 0.0
     ORCAPlanner().compute_pool(pool, dt=0.1)
-    assert pool.vel[0, 0] > 0.95, "no sight, a silent robot and no cane: nothing to avoid"
+    assert pool.vel[0, 0] > 0.95, "no sight and no cane: nothing to avoid"
 
     pool = _head_on(pool_empty, agent_factory, 1.0)
     pool.vision_range[0] = 0.0
-    pool.robot_loudness = 0.0
     pool.cane_reach[0] = 1.2
     ORCAPlanner().compute_pool(pool, dt=0.1)
     assert pool.vel[0, 0] < 0.95 or abs(pool.vel[0, 1]) > 1e-4, "the cane reaches the robot"
 
-    pool = _head_on(pool_empty, agent_factory, 1.0)
-    pool.vision_range[0] = 0.0
-    pool.hearing_range[0] = 2.0
-    ORCAPlanner().compute_pool(pool, dt=0.1)
-    assert pool.vel[0, 0] > 0.95, "a standing robot is silent"
 
-    pool = _head_on(pool_empty, agent_factory, 1.0)
-    pool.vision_range[0] = 0.0
-    pool.hearing_range[0] = 2.0
-    pool.vel[1] = (-1.0, 0.0)
-    ORCAPlanner().compute_pool(pool, dt=0.1)
-    assert pool.vel[0, 0] < 0.95 or abs(pool.vel[0, 1]) > 1e-4, "a robot driving at 1 m/s is heard out to 2 m"
-
-
-def test_orca_hearing_never_shortens_the_robot_range_of_a_seeing_pedestrian(
+def test_orca_cane_reach_never_shortens_the_robot_range_of_a_seeing_pedestrian(
     pool_empty: Callable[..., AgentPool],
     agent_factory: Callable[..., BaseAgent],
 ) -> None:
@@ -238,8 +223,8 @@ def test_orca_hearing_never_shortens_the_robot_range_of_a_seeing_pedestrian(
     ORCAPlanner().compute_pool(plain, dt=0.1)
     assert plain.vel[0, 0] < 0.95 or abs(plain.vel[0, 1]) > 1e-4, "full sight keeps the robot out to neighbor_dist"
 
-    hearing = _head_on(pool_empty, agent_factory, 1.0)
-    hearing.vision_range[0] = 0.5
-    hearing.hearing_range[0] = 0.8
-    ORCAPlanner().compute_pool(hearing, dt=0.1)
-    np.testing.assert_array_equal(hearing.vel[:2], plain.vel[:2])
+    cane = _head_on(pool_empty, agent_factory, 1.0)
+    cane.vision_range[0] = 0.5
+    cane.cane_reach[0] = 0.8
+    ORCAPlanner().compute_pool(cane, dt=0.1)
+    np.testing.assert_array_equal(cane.vel[:2], plain.vel[:2])

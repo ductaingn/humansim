@@ -493,7 +493,6 @@ class PerceptionDist:
     vision_occlusion: bool = True
     robot_awareness: AwarenessSpec = attrs.field(default=AWARENESS_PRESETS["normal"], converter=as_awareness_spec)
     robot_response: str = attrs.field(default="avoid", validator=attrs.validators.in_(ROBOT_RESPONSES))
-    hearing_range: ParamDist = attrs.field(default=ParamDist(0.0, clip_low=0.0), converter=_as_paramdist)
     cane_reach: ParamDist = attrs.field(default=ParamDist(0.0, clip_low=0.0), converter=_as_paramdist)
     cane_width: ParamDist = attrs.field(default=ParamDist(0.0, clip_low=0.0), converter=_as_paramdist)
     detection_delay: ParamDist = attrs.field(default=ParamDist(0.0, clip_low=0.0), converter=_as_paramdist)
@@ -612,7 +611,6 @@ class SampledPerception:
     robot_blind: bool = False
     robot_halt: bool = False
     robot_yields: bool = True
-    hearing_range: float = 0.0
     cane_reach: float = 0.0
     cane_width: float = 0.0
     detection_delay: float = 0.0
@@ -770,7 +768,6 @@ def sample_agent_type(
     perc = agent_type.perception
     sampled_perception = attrs.evolve(
         sampled_perception,
-        hearing_range=_sample_dist(perc.hearing_range, rng),
         cane_reach=_sample_dist(perc.cane_reach, rng),
         cane_width=_sample_dist(perc.cane_width, rng),
         detection_delay=_sample_dist(perc.detection_delay, rng),

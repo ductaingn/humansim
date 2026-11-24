@@ -25,7 +25,6 @@ GLOBAL_PLANNER_RESOLUTION = Param[float]("global_planner.resolution", 0.2, "Plan
 GLOBAL_PLANNER_COMFORT_RADIUS = Param[float]("global_planner.comfort_radius", 0.6, "Preferred wall clearance of navmesh paths in meters, relaxed in narrow passages.", constraint=Range(0.0, 5.0))
 LOCAL_PLANNER = Param[str]("local_planner", "sfm", "Default local planner module name.")
 FORCE_LOCAL_PLANNER = Param[bool]("force_local_planner", False, "Put every agent on local_planner, ignoring the scenario's per-agent policies.")
-ROBOT_LOUDNESS = Param[float]("robot_loudness", 1.0, "Scale on the distance robots are heard at, which also grows with robot speed (hearing_range is the distance at 1 m/s): 0 is a silent robot.", constraint=Range(0.0, 10.0))
 ROBOT_POLICY = Param[str]("robot_policy", "", "Policy that replaces the policy of every robot-kind agent at scenario load (empty = keep the scenario policy).")
 ROBOT_SHUTDOWN = Param[str]("robot_shutdown", "", "End the sim once every robot latched on its final waypoint: true or false overrides the scenario, empty = use the scenario value.")
 FORCE_WAYPOINT_MODE = Param[str]("force_waypoint_mode", "", "Waypoint mode that replaces the one of every human scenario agent (empty = keep the scenario value).", constraint=WAYPOINT_MODES)
@@ -69,7 +68,6 @@ AGENT_MANAGER_PARAMS = (
     GLOBAL_PLANNER_COMFORT_RADIUS,
     LOCAL_PLANNER,
     FORCE_LOCAL_PLANNER,
-    ROBOT_LOUDNESS,
     ROBOT_POLICY,
     ROBOT_SHUTDOWN,
     FORCE_WAYPOINT_MODE,

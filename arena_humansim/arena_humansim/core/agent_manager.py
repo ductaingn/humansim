@@ -494,7 +494,6 @@ class AgentManager(TimeNode):
         self._last_despawned_ids: list[int] = []
 
         self._pool = AgentPool()
-        self._pool.robot_loudness = self._float_param("robot_loudness")
         for sub in self._pool_aware:
             sub.attach(self._pool)
 

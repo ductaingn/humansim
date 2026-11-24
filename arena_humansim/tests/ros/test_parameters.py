@@ -110,7 +110,7 @@ def test_out_of_range_values_are_rejected(system: RosTestSystem) -> None:
     assert system.manager.get_parameter(_RESOLUTION).value == pytest.approx(before)
 
 
-@pytest.mark.parametrize(("name", "value"), [("dt", 0.1), ("collision", "noop"), ("mode", "master"), ("bt_tick_interval", 3), ("robot_loudness", 0.0)])
+@pytest.mark.parametrize(("name", "value"), [("dt", 0.1), ("collision", "noop"), ("mode", "master"), ("bt_tick_interval", 3)])
 def test_static_param_is_rejected(system: RosTestSystem, name: str, value: object) -> None:
     before = system.manager.get_parameter(name).value
     result = _set(system, name, value)

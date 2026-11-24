@@ -8,7 +8,7 @@ from numba import njit, prange
 from scipy.spatial import cKDTree  # pyright: ignore[reportAttributeAccessIssue]
 
 from arena_humansim.core.agents import BaseAgent
-from arena_humansim.core.pool import KIND_ROBOT, AgentPool
+from arena_humansim.core.pool import AgentPool
 from arena_humansim.utils.types import Pose2D, Segments
 from arena_humansim.utils.wall_grid import WallGrid, query_walls
 
@@ -538,14 +538,12 @@ class ORCAPlanner(LocalPlanner):
         vision = pool.vision_range[:n]
         sight = np.minimum(vision, np.maximum(0.0, vision + pool.robot_range_offset[:n]))
         # robot_range == vision_range means no cut: full sight keeps robots out to neighbor_dist, as for people. Shortened or
-        # no sight cuts at the farthest of sight, hearing and cane reach.
+        # no sight cuts at the farther of sight and cane reach.
         cut = (sight < vision) | (vision <= 0.0)
-        # One cut per pedestrian covers every robot, so hearing takes the loudest robot (loudness times speed).
-        loudest = float(pool.robot_hearing_scale(np.flatnonzero(pool.kind[:n] == KIND_ROBOT)).max(initial=0.0))
         robot_range = np.where(
             pool.robot_blind[:n] | ~pool.robot_yields[:n],
             0.0,
-            np.where(cut, np.maximum(sight, np.maximum(pool.hearing_range[:n] * loudest, pool.cane_reach[:n])), vision),
+            np.where(cut, np.maximum(sight, pool.cane_reach[:n]), vision),
         )
         _orca_kernel(
             pos,

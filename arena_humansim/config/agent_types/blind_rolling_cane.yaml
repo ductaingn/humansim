@@ -11,8 +11,7 @@ desired_velocity: {mean: 0.82, std: 0.24, clip_low: 0.3, clip_high: 1.4}  # blin
 max_velocity: {mean: 1.1, std: 0.2, clip_low: 0.7, clip_high: 1.7}  # estimate, no study: the adult's max/comfortable ratio 1.5/1.1 on that mean
 perception:
   vision_range: 0.0  # no usable sight
-  proximity_sense: 0.0  # no usable sight; hearing and the cane replace it
-  hearing_range: 2.0  # estimate: how far a robot driving 1 m/s is heard, see SOURCES.md
+  proximity_sense: 0.0  # no usable sight; the cane replaces it (hearing is not modelled, see SOURCES.md)
   cane_reach: 1.05  # Arena cane (hold.py): 1.27 m held 0.1 m below its top, fist 0.9 m high and 0.3 m ahead
   cane_width: 0.6  # Arena sweep +-0.30 m; measured arcs are 0.83 ± 0.23 m, Emerson et al. 2019 JVIB Table 4
   detection_delay: 0.5  # estimate, see SOURCES.md
