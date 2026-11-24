@@ -200,7 +200,7 @@ class LocomotionExtension(PoolAware):
         theta = pool.theta[rows]
         vel = pool.vel[rows]
         along = (self.kinematics[rows] == 1) & (mode == MODE_NORMAL)
-        turning = along & ~provides_heading[rows]
+        turning = along & ~provides_heading[rows] & ~pool.robot_halted[rows]  # held still for a robot, it keeps facing its way, not the drift walls and people push it at
         if turning.any():
             t_rows = rows[turning]
             v = pool.vel[t_rows]
@@ -232,7 +232,7 @@ class LocomotionExtension(PoolAware):
         goal = pool.goal_pos[rec]
         delta = goal - pool.pos[rec]
         dist = np.hypot(delta[:, 0], delta[:, 1])
-        tracked = pool.has_goal[rec] & (pool.desired_vel[rec] > 0.0) & (dist > GOAL_NEAR_M)
+        tracked = pool.has_goal[rec] & (pool.desired_vel[rec] > 0.0) & (dist > GOAL_NEAR_M) & ~pool.robot_halted[rec]  # waiting for a robot is not being stuck
         new_goal = np.any(goal != self.goal_seen[rec], axis=1)
         self.goal_seen[rec] = goal
         improved = dist < self.best_goal_dist[rec] - IMPROVE_M
