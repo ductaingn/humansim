@@ -26,7 +26,6 @@ class DefaultPerception(Perception):
         self._shared_tree: cKDTree | None = None
         self._shared_ids: list[int] | None = None
         self._shared_positions: list[tuple[float, float]] | None = None
-        self._dt: float | None = None
 
     def prepare_tick(self, all_agents: dict[int, AgentState]) -> None:
         ids: list[int] = []
@@ -53,13 +52,9 @@ class DefaultPerception(Perception):
     def shared_positions(self) -> list[tuple[float, float]] | None:
         return self._shared_positions
 
-    def compute_pool(self, pool: AgentPool, dt: float | None = None) -> None:
-        if dt is not None:
-            pool.perception_clock += dt
-        self._dt = dt
+    def compute_pool(self, pool: AgentPool) -> None:
         n = pool.n
         if n <= 1:
-            pool.robot_sensed_since.clear()
             pool.set_neighbor_csr(
                 np.zeros(n + 1, dtype=np.int32),
                 np.empty(0, dtype=np.int32),
@@ -151,13 +146,6 @@ class DefaultPerception(Perception):
             mask[c_row[hit], c_col[hit]] = True
 
         row, col = np.where(mask)
-        if self._dt is not None and np.any(pool.detection_delay[:n] > 0.0):
-            keep = _noticed(pool, row, col)
-            row, col = row[keep], col[keep]
-            mask = np.zeros_like(mask)
-            mask[row, col] = True
-        else:
-            pool.robot_sensed_since.clear()
         if len(row) == 0:
             pool.set_neighbor_csr(
                 np.zeros(n + 1, dtype=np.int32),
@@ -193,7 +181,6 @@ class DefaultPerception(Perception):
         dist = dist[mask]
 
         if len(row) == 0:
-            pool.robot_sensed_since.clear()
             pool.set_neighbor_csr(
                 np.zeros(n + 1, dtype=np.int32),
                 np.empty(0, dtype=np.int32),
@@ -264,11 +251,6 @@ class DefaultPerception(Perception):
 
         row = row[keep]
         col = col[keep]
-        if self._dt is not None and np.any(pool.detection_delay[:n] > 0.0):
-            keep = _noticed(pool, row, col)
-            row, col = row[keep], col[keep]
-        else:
-            pool.robot_sensed_since.clear()
 
         counts = np.bincount(row, minlength=n)
         indptr = np.zeros(n + 1, dtype=np.int32)
@@ -406,25 +388,8 @@ def _cane_pairs(pool: AgentPool, positions: np.ndarray, row: np.ndarray, col: np
     return sensed
 
 
-def _noticed(pool: AgentPool, row: np.ndarray, col: np.ndarray) -> np.ndarray:
-    """Keep mask over the sensed (row, col) pairs: a robot enters an observer's list once the observer has sensed it without a
-    break for its detection_delay. Sensing start times live on the pool, keyed by agent ids, and pairs no longer sensed drop. Ticks that skip this check clear them all, so no delay carries over a
-    gap."""
-    keep = np.ones(len(row), dtype=np.bool_)
-    delayed = np.flatnonzero((pool.detection_delay[row] > 0.0) & (pool.kind[col] == KIND_ROBOT) & (pool.kind[row] != KIND_ROBOT))
-    now = pool.perception_clock
-    since: dict[tuple[int, int], float] = {}
-    for k in delayed:
-        key = (int(pool.agent_ids[row[k]]), int(pool.agent_ids[col[k]]))
-        start = pool.robot_sensed_since.get(key, now)
-        since[key] = start
-        keep[k] = now - start >= pool.detection_delay[row[k]] - 1e-9
-    pool.robot_sensed_since = since
-    return keep
-
-
 def _cane_hit(perception: SampledPerception, dx: float, dy: float, heading: float) -> bool:
-    """Single-observer form of _cane_pairs for the per-agent fallback path: targets are points, and there is no detection delay."""
+    """Single-observer form of _cane_pairs for the per-agent fallback path: targets are points."""
     if perception.cane_reach <= 0.0:
         return False
     ahead = dx * np.cos(heading) + dy * np.sin(heading)

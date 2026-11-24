@@ -25,7 +25,7 @@ def _neighbors(pool: AgentPool, idx: int) -> list[int]:
     return [int(i) for i in pool.neighbor_indices[int(pool.neighbor_indptr[idx]) : int(pool.neighbor_indptr[idx + 1])]]
 
 
-def _cane_user(pool: AgentPool, agent_factory: Callable[..., BaseAgent], delay: float = 0.0) -> None:
+def _cane_user(pool: AgentPool, agent_factory: Callable[..., BaseAgent]) -> None:
     """A blind cane user at the origin facing +x: no sight, cane 1.2 m ahead and 1 m across."""
     pool.add_agent(agent_factory(agent_id=1, x=0.0, y=0.0))
     pool.kind[0] = KIND_HUMAN
@@ -34,7 +34,6 @@ def _cane_user(pool: AgentPool, agent_factory: Callable[..., BaseAgent], delay: 
     pool.proximity_sense[0] = 0.0
     pool.cane_reach[0] = 1.2
     pool.cane_width[0] = 1.0
-    pool.detection_delay[0] = delay
 
 
 def _add(pool: AgentPool, agent_factory: Callable[..., BaseAgent], aid: int, x: float, y: float, kind: int, radius: float = 0.3) -> int:
@@ -93,47 +92,6 @@ def test_robot_blind_people_sense_no_robot_with_the_cane(pool_empty: Callable[..
     assert robot not in _neighbors(pool, 0)
 
 
-def test_a_robot_enters_the_list_after_the_detection_delay_and_the_clock_restarts_when_it_is_lost(pool_empty: Callable[..., AgentPool], agent_factory: Callable[..., BaseAgent]) -> None:
-    pool = pool_empty(capacity=8)
-    _cane_user(pool, agent_factory, delay=0.5)
-    robot = _add(pool, agent_factory, 2, 1.0, 0.0, KIND_ROBOT)
-    walker = _add(pool, agent_factory, 3, 0.8, 0.6, KIND_HUMAN)
-    perception = DefaultPerception()
-
-    listed = []
-    for _ in range(8):
-        perception.compute_pool(pool, dt=DT)
-        listed.append(robot in _neighbors(pool, 0))
-        assert walker in _neighbors(pool, 0), "the delay is for robots only"
-    assert listed == [False] * 5 + [True] * 3
-
-    pool.pos[robot] = (10.0, 0.0)
-    perception.compute_pool(pool, dt=DT)
-    pool.pos[robot] = (1.0, 0.0)
-    perception.compute_pool(pool, dt=DT)
-    assert robot not in _neighbors(pool, 0)
-
-
-@pytest.mark.parametrize("small_n_threshold", [64, 1], ids=["dense", "kdtree"])
-def test_the_detection_delay_restarts_after_a_tick_with_nobody_in_range(pool_empty: Callable[..., AgentPool], agent_factory: Callable[..., BaseAgent], small_n_threshold: int) -> None:
-    pool = pool_empty(capacity=8)
-    observer = _add(pool, agent_factory, 1, 0.0, 0.0, KIND_HUMAN)
-    pool.vision_range[observer] = 5.0
-    pool.vision_fov[observer] = 360.0
-    pool.detection_delay[observer] = 0.5
-    robot = _add(pool, agent_factory, 2, 2.0, 0.0, KIND_ROBOT)
-    perception = DefaultPerception(small_n_threshold=small_n_threshold)
-    for _ in range(6):
-        perception.compute_pool(pool, dt=DT)
-    assert robot in _neighbors(pool, observer)
-
-    pool.pos[robot] = (50.0, 0.0)
-    perception.compute_pool(pool, dt=DT)
-    pool.pos[robot] = (2.0, 0.0)
-    perception.compute_pool(pool, dt=DT)
-    assert robot not in _neighbors(pool, observer)
-
-
 def test_dense_and_kdtree_paths_agree_with_cane_users_in_occlusion_free_crowds(pool_empty: Callable[..., AgentPool], agent_factory: Callable[..., BaseAgent]) -> None:
     rng = np.random.default_rng(7)
     pool = pool_empty(capacity=128)
@@ -170,14 +128,13 @@ def test_declaring_the_new_perception_fields_leaves_every_other_sampled_value_un
         perception=PerceptionDist(
             cane_reach={"mean": 1.2, "std": 0.05},
             cane_width={"mean": 1.0, "std": 0.1},
-            detection_delay={"mean": 0.6, "std": 0.1},
         ),
     )
     a = sample_agent_type(plain, np.random.default_rng(42))
     b = sample_agent_type(with_cane, np.random.default_rng(42))
-    assert attrs.evolve(b.perception, cane_reach=0.0, cane_width=0.0, detection_delay=0.0) == a.perception
+    assert attrs.evolve(b.perception, cane_reach=0.0, cane_width=0.0) == a.perception
     assert attrs.evolve(b, perception=a.perception) == a
-    assert b.perception.cane_reach > 0.0 and b.perception.detection_delay > 0.0
+    assert b.perception.cane_reach > 0.0
 
 
 def _notice_distance(agent_type: AgentType, seed: int = 3) -> float:
@@ -199,7 +156,7 @@ def _notice_distance(agent_type: AgentType, seed: int = 3) -> float:
     pool.vel[1] = (-1.0, 0.0)
     perception = DefaultPerception()
     for _ in range(200):
-        perception.compute_pool(pool, dt=DT)
+        perception.compute_pool(pool)
         if 1 in _neighbors(pool, 0):
             return float(pool.pos[1, 0])
         pool.pos[1, 0] -= 1.0 * DT
@@ -211,7 +168,7 @@ def test_in_a_head_on_encounter_the_cane_user_notices_the_robot_later_than_the_a
     adult = _notice_distance(builtin["adult"])
     cane = _notice_distance(builtin["blind_white_cane"])
     assert adult > 4.0, "the adult sees the robot at its vision range"
-    assert 0.7 < cane < 0.95, "the cane finds the robot at 1.05 m plus its radius and lists it half a second later"
+    assert 1.25 < cane <= 1.35 + 1e-9, "the cane finds the robot at 1.05 m plus its radius, on that tick"
     seeds = range(10)
     rollator_mean = np.mean([_notice_distance(builtin["elder_rollator"], seed) for seed in seeds])
     adult_mean = np.mean([_notice_distance(builtin["adult"], seed) for seed in seeds])

@@ -1561,7 +1561,7 @@ class AgentManager(TimeNode):
         t0 = time.perf_counter()
         default_layer = next(iter(self._perception_cache.values()), None)
         if default_layer is not None and default_layer.supports_pool:
-            default_layer.compute_pool(pool, dt=self._dt)
+            default_layer.compute_pool(pool)
         self._carrier.update(pool, self._interaction_manager.carries(), self._dt)
         self._carrier.exclude(pool)
 

@@ -495,7 +495,6 @@ class PerceptionDist:
     robot_response: str = attrs.field(default="avoid", validator=attrs.validators.in_(ROBOT_RESPONSES))
     cane_reach: ParamDist = attrs.field(default=ParamDist(0.0, clip_low=0.0), converter=_as_paramdist)
     cane_width: ParamDist = attrs.field(default=ParamDist(0.0, clip_low=0.0), converter=_as_paramdist)
-    detection_delay: ParamDist = attrs.field(default=ParamDist(0.0, clip_low=0.0), converter=_as_paramdist)
 
 
 KINEMATICS = ("holonomic", "along_heading")
@@ -613,7 +612,6 @@ class SampledPerception:
     robot_yields: bool = True
     cane_reach: float = 0.0
     cane_width: float = 0.0
-    detection_delay: float = 0.0
 
 
 @attrs.frozen
@@ -770,7 +768,6 @@ def sample_agent_type(
         sampled_perception,
         cane_reach=_sample_dist(perc.cane_reach, rng),
         cane_width=_sample_dist(perc.cane_width, rng),
-        detection_delay=_sample_dist(perc.detection_delay, rng),
     )
 
     return SampledParams(

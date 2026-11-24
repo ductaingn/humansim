@@ -24,7 +24,6 @@ Perception (`perception:`):
 - `proximity_sense` (m) - near-field detection radius independent of FOV.
 - `vision_occlusion` (bool, not a distribution) - whether walls block line of sight. With it, walls also block the cane.
 - `cane_reach`, `cane_width` (m, default 0 = off) - the cane's sweep: the agent touches anything whose disc reaches into the rectangle `cane_reach` ahead and `cane_width` across.
-- `detection_delay` (s, default 0) - a robot joins the agent's neighbours only after the agent has sensed it, by sight or cane, for this long without a break.
 - `robot_awareness` - how this agent perceives robots. Accepts a preset name, `blind`, a boolean (`true` is `normal`, `false` is `blind`), a mapping of shifts, or a list of weighted entries for a crowd mixture. Mapping keys are `detection`, `fov`, `repulsion`, `reaction`, `blind` and `yields`; each value is a number of sigmas or a `{mean, std, clip_low, clip_high}` distribution of sigmas, and omitted keys stay at 0. A sigma is the agent's own spread of that dimension, so `detection: -2` moves the robot range by two times the `vision_range` std.
   - `detection`: robot detection range, from `vision_range`; never past the agent's own range.
   - `fov`: robot field of view, from `vision_fov`, clipped to 0-360 degrees.
@@ -49,7 +48,6 @@ Built-in presets for robot awareness: `blind`, `distracted`, `normal`, `interest
 | `robot_awareness` `blind` | no robot perception | no robot perception | robots are invisible to the agent |
 | `robot_awareness` `yields: false` | zero repulsion against robots | robots left out | the agent senses robots but does not give way |
 | `cane_reach` | add neighbours in perception | widen the robot distance cutoff, any bearing | cane touch |
-| `detection_delay` | holds robots back in perception | ignored | late noticing |
 
 > Note: ORCA builds its private neighbor list and solves instantaneous geometric velocity obstacles, so it reads `detection`, `blind`, `repulsion` and `reaction`; `fov` acts only through the perception-gated planners.
 
