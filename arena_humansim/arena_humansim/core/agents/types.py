@@ -111,6 +111,12 @@ def _as_blind(val: object) -> bool:
     return val
 
 
+def _as_yields(val: object) -> bool:
+    if not isinstance(val, bool):
+        raise ValueError(f"robot awareness yields must be true or false, got {val!r}")
+    return val
+
+
 @attrs.frozen
 class AwarenessShift:
     detection: ParamDist = attrs.field(default=ParamDist(0.0, clip_low=0.0, clip_high=0.0), converter=_as_shift_dist)
@@ -118,6 +124,7 @@ class AwarenessShift:
     repulsion: ParamDist = attrs.field(default=ParamDist(0.0, clip_low=0.0, clip_high=0.0), converter=_as_shift_dist)
     reaction: ParamDist = attrs.field(default=ParamDist(0.0, clip_low=0.0, clip_high=0.0), converter=_as_shift_dist)
     blind: bool = attrs.field(default=False, converter=_as_blind)
+    yields: bool = attrs.field(default=True, converter=_as_yields)
 
 
 @attrs.frozen
@@ -127,7 +134,7 @@ class AwarenessMixture:
 
 AwarenessSpec = AwarenessShift | AwarenessMixture
 
-_SHIFT_FIELDS: tuple[str, ...] = ("detection", "fov", "repulsion", "reaction", "blind")
+_SHIFT_FIELDS: tuple[str, ...] = ("detection", "fov", "repulsion", "reaction", "blind", "yields")
 
 AWARENESS_PRESETS: dict[str, AwarenessShift] = {
     "blind": AwarenessShift(blind=True),
@@ -136,6 +143,7 @@ AWARENESS_PRESETS: dict[str, AwarenessShift] = {
     "interested": AwarenessShift(repulsion=-3.0, reaction=-1.5),
     "aggressive": AwarenessShift(fov=-1.0, repulsion=-4.0, reaction=-2.0),
     "scared": AwarenessShift(fov=2.0, repulsion=6.0, reaction=3.0),
+    "not_yielding": AwarenessShift(yields=False),
 }
 
 
@@ -198,6 +206,7 @@ class AwarenessDraw:
     repulsion: float
     reaction: float
     blind: bool
+    yields: bool = True
 
 
 def sample_awareness(spec: AwarenessSpec, rng: np.random.Generator) -> AwarenessDraw:
@@ -212,6 +221,7 @@ def sample_awareness(spec: AwarenessSpec, rng: np.random.Generator) -> Awareness
         repulsion=_sample_dist(shift.repulsion, rng),
         reaction=_sample_dist(shift.reaction, rng),
         blind=shift.blind,
+        yields=shift.yields,
     )
 
 
@@ -225,9 +235,10 @@ def with_robot_awareness(perception: "SampledPerception", draw: AwarenessDraw) -
         perception,
         robot_range_offset=draw.detection * perception.vision_range_sd,
         robot_fov_offset=draw.fov * perception.vision_fov_sd,
-        robot_repulsion_gain=max(0.0, 1.0 + draw.repulsion * perception.repulsion_rel_sd),
+        robot_repulsion_gain=max(0.0, 1.0 + draw.repulsion * perception.repulsion_rel_sd) if draw.yields else 0.0,
         robot_reaction_gain=max(0.05, 1.0 + draw.reaction * perception.reaction_rel_sd),
         robot_blind=draw.blind,
+        robot_yields=draw.yields,
     )
 
 
@@ -478,6 +489,10 @@ class PerceptionDist:
     proximity_sense: ParamDist = attrs.field(default=ParamDist(1.0, 0.2, clip_low=0.5, clip_high=2.0), converter=_as_paramdist)
     vision_occlusion: bool = True
     robot_awareness: AwarenessSpec = attrs.field(default=AWARENESS_PRESETS["normal"], converter=as_awareness_spec)
+    hearing_range: ParamDist = attrs.field(default=ParamDist(0.0, clip_low=0.0), converter=_as_paramdist)
+    cane_reach: ParamDist = attrs.field(default=ParamDist(0.0, clip_low=0.0), converter=_as_paramdist)
+    cane_width: ParamDist = attrs.field(default=ParamDist(0.0, clip_low=0.0), converter=_as_paramdist)
+    detection_delay: ParamDist = attrs.field(default=ParamDist(0.0, clip_low=0.0), converter=_as_paramdist)
 
 
 KINEMATICS = ("holonomic", "along_heading")
@@ -591,6 +606,11 @@ class SampledPerception:
     robot_repulsion_gain: float = 1.0
     robot_reaction_gain: float = 1.0
     robot_blind: bool = False
+    robot_yields: bool = True
+    hearing_range: float = 0.0
+    cane_reach: float = 0.0
+    cane_width: float = 0.0
+    detection_delay: float = 0.0
 
 
 @attrs.frozen
@@ -741,6 +761,14 @@ def sample_agent_type(
     handedness = _sample_handedness(agent_type.handedness, rng)
     locomotion = _sample_locomotion(agent_type, rng)
     stair_effort = _sample_dist(agent_type.stair_effort, rng)
+    perc = agent_type.perception
+    sampled_perception = attrs.evolve(
+        sampled_perception,
+        hearing_range=_sample_dist(perc.hearing_range, rng),
+        cane_reach=_sample_dist(perc.cane_reach, rng),
+        cane_width=_sample_dist(perc.cane_width, rng),
+        detection_delay=_sample_dist(perc.detection_delay, rng),
+    )
 
     return SampledParams(
         name=agent_type.name,

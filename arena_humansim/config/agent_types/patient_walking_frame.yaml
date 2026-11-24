@@ -7,13 +7,16 @@
 name: patient_walking_frame
 extends: elder
 
-desired_velocity: {mean: 0.17, std: 0.02, clip_low: 0.12, clip_high: 0.22}
-max_velocity: {mean: 0.25, std: 0.03, clip_low: 0.18, clip_high: 0.32}
-agent_radius: {mean: 0.32, std: 0.01, clip_low: 0.3, clip_high: 0.35}
-max_acceleration: {mean: 0.3, std: 0.05, clip_low: 0.15, clip_high: 0.5}
-max_deceleration: {mean: 0.6, std: 0.1, clip_low: 0.3, clip_high: 1.0}
-min_turning_radius: {mean: 0.4, std: 0.05, clip_low: 0.2, clip_high: 0.8}
-pivot_angular_velocity: {mean: 0.5, std: 0.1, clip_low: 0.3, clip_high: 0.8}
+desired_velocity: {mean: 0.17, std: 0.02, clip_low: 0.12, clip_high: 0.22}  # estimate, see SOURCES.md
+max_velocity: {mean: 0.25, std: 0.03, clip_low: 0.18, clip_high: 0.32}  # estimate, see SOURCES.md
+agent_radius: {mean: 0.32, std: 0.01, clip_low: 0.3, clip_high: 0.35}  # estimate, see SOURCES.md
+max_acceleration: {mean: 0.3, std: 0.05, clip_low: 0.15, clip_high: 0.5}  # estimate, see SOURCES.md
+max_deceleration: {mean: 0.6, std: 0.1, clip_low: 0.3, clip_high: 1.0}  # estimate, see SOURCES.md
+min_turning_radius: {mean: 0.4, std: 0.05, clip_low: 0.2, clip_high: 0.8}  # estimate, see SOURCES.md
+pivot_angular_velocity: {mean: 0.5, std: 0.1, clip_low: 0.3, clip_high: 0.8}  # estimate, see SOURCES.md
+
+perception:
+  detection_delay: 0.5  # estimate, see SOURCES.md
 
 locomotion:
   cadence: {base: 0.4, per_speed: 0.7536, min: 0.4, max: 2.2}
@@ -22,7 +25,7 @@ locomotion:
     harmonics: [[0.95, -3.08], [0.431, -1.62]]
   lateral_profile:
     harmonics: [[0.259, -0.46], [0.212, 0.54]]
-  footprint_length: 0.95
+  footprint_length: 0.95  # estimate, see SOURCES.md
 
 pose:
   # WalkerFitted handle tubes (9 mm); curls solved on the scenario's actor (Hospital/patient_female_asian_old, assistive_1103 grasp_actor.py)

@@ -91,7 +91,7 @@ def test_explicit_speed_above_the_type_max_raises_the_max(manager_factory: Calla
     assert float((pool.vel[pool.idx(ROBOT)] ** 2).sum()) ** 0.5 > 1.2
 
 
-def _flow_with_awareness(tmp_path: Path) -> Path:
+def _flow_with_awareness(tmp_path: Path, awareness: str = "blind") -> Path:
     data = yaml.safe_load(_write_scenario(tmp_path / "scenario.yaml").read_text())
     data["agents"] = []
     data["flow"] = {
@@ -102,7 +102,7 @@ def _flow_with_awareness(tmp_path: Path) -> Path:
                 "max_concurrent": 2,
                 "max_total": 2,
                 "pose": {"x": -5.0, "y": 0.0},
-                "agent_template": {"agent_type": "stroller", "robot_awareness": "blind"},
+                "agent_template": {"agent_type": "stroller", "robot_awareness": awareness},
             }
         ],
         "sinks": [],
@@ -122,6 +122,19 @@ def test_flow_spawns_take_the_template_robot_awareness(manager_factory: Callable
         idx = pool.idx(aid)
         assert bool(pool.robot_blind[idx]) is True
         assert agent.params.perception.robot_blind is True
+
+
+def test_flow_spawns_take_the_template_not_yielding_awareness(manager_factory: Callable[..., AgentManager], tmp_path: Path) -> None:
+    mgr = manager_factory(load_scenario(str(_flow_with_awareness(tmp_path, "not_yielding"))), node_name="test_flow_not_yielding")
+    for _ in range(20):
+        mgr.tick()
+    pool = mgr._pool
+    assert len(mgr._agents) == 2
+    for aid in mgr._agents:
+        idx = pool.idx(aid)
+        assert bool(pool.robot_yields[idx]) is False, "ORCA reads this column"
+        assert bool(pool.robot_blind[idx]) is False
+        assert pool.robot_repulsion_gain[idx] == 0.0
 
 
 def test_removing_a_flow_agent_drops_its_awareness_override(manager_factory: Callable[..., AgentManager], tmp_path: Path) -> None:

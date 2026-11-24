@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
+import numpy as np
 import pytest
 from arena_humansim.core.agents.base import BaseAgent
 from arena_humansim.core.pool import KIND_HUMAN, KIND_ROBOT, AgentPool
@@ -172,3 +173,73 @@ def test_orca_robot_repulsion_gain_is_floored_at_085_of_the_robot_radius(
         return float(pool.vel[0, 0])
 
     assert speed_toward_goal(0.0) == pytest.approx(speed_toward_goal(0.85))
+
+
+def _head_on(pool_empty: Callable[..., AgentPool], agent_factory: Callable[..., BaseAgent], robot_x: float) -> AgentPool:
+    pool = pool_empty(capacity=8)
+    pool.add_agent(agent_factory(agent_id=1, x=0.0, y=0.0))
+    pool.kind[0] = KIND_HUMAN
+    pool.desired_vel[0] = 1.0
+    pool.add_agent(agent_factory(agent_id=2, x=robot_x, y=0.0))
+    pool.kind[1] = KIND_ROBOT
+    pool.desired_vel[1] = 0.0
+    pool.set_goals({1: Pose2D(x=8.0, y=0.0), 2: Pose2D(x=robot_x, y=0.0)})
+    return pool
+
+
+def test_orca_not_yielding_pedestrian_keeps_its_course_at_the_robot(
+    pool_empty: Callable[..., AgentPool],
+    agent_factory: Callable[..., BaseAgent],
+) -> None:
+    pool = _head_on(pool_empty, agent_factory, 1.0)
+    pool.robot_yields[0] = False
+    ORCAPlanner().compute_pool(pool, dt=0.1)
+    assert pool.vel[0, 0] > 0.95
+    assert abs(pool.vel[0, 1]) < 1e-4
+
+
+def test_orca_hearing_and_cane_reach_extend_the_robot_cutoff_beyond_sight(
+    pool_empty: Callable[..., AgentPool],
+    agent_factory: Callable[..., BaseAgent],
+) -> None:
+    pool = _head_on(pool_empty, agent_factory, 1.0)
+    pool.vision_range[0] = 0.0
+    pool.robot_loudness = 0.0
+    ORCAPlanner().compute_pool(pool, dt=0.1)
+    assert pool.vel[0, 0] > 0.95, "no sight, a silent robot and no cane: nothing to avoid"
+
+    pool = _head_on(pool_empty, agent_factory, 1.0)
+    pool.vision_range[0] = 0.0
+    pool.robot_loudness = 0.0
+    pool.cane_reach[0] = 1.2
+    ORCAPlanner().compute_pool(pool, dt=0.1)
+    assert pool.vel[0, 0] < 0.95 or abs(pool.vel[0, 1]) > 1e-4, "the cane reaches the robot"
+
+    pool = _head_on(pool_empty, agent_factory, 1.0)
+    pool.vision_range[0] = 0.0
+    pool.hearing_range[0] = 2.0
+    ORCAPlanner().compute_pool(pool, dt=0.1)
+    assert pool.vel[0, 0] > 0.95, "a standing robot is silent"
+
+    pool = _head_on(pool_empty, agent_factory, 1.0)
+    pool.vision_range[0] = 0.0
+    pool.hearing_range[0] = 2.0
+    pool.vel[1] = (-1.0, 0.0)
+    ORCAPlanner().compute_pool(pool, dt=0.1)
+    assert pool.vel[0, 0] < 0.95 or abs(pool.vel[0, 1]) > 1e-4, "a robot driving at 1 m/s is heard out to 2 m"
+
+
+def test_orca_hearing_never_shortens_the_robot_range_of_a_seeing_pedestrian(
+    pool_empty: Callable[..., AgentPool],
+    agent_factory: Callable[..., BaseAgent],
+) -> None:
+    plain = _head_on(pool_empty, agent_factory, 1.0)
+    plain.vision_range[0] = 0.5
+    ORCAPlanner().compute_pool(plain, dt=0.1)
+    assert plain.vel[0, 0] < 0.95 or abs(plain.vel[0, 1]) > 1e-4, "full sight keeps the robot out to neighbor_dist"
+
+    hearing = _head_on(pool_empty, agent_factory, 1.0)
+    hearing.vision_range[0] = 0.5
+    hearing.hearing_range[0] = 0.8
+    ORCAPlanner().compute_pool(hearing, dt=0.1)
+    np.testing.assert_array_equal(hearing.vel[:2], plain.vel[:2])
