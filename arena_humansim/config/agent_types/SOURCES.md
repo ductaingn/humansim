@@ -4,6 +4,7 @@ One row per type and parameter. Types that share a value share a row. **Status:*
 - *measured*: the value is taken from the study;
 - *derived*: computed from a measured value, the calculation is given;
 - *estimate*: no study found, so the value is our own. "Inherited" means the type keeps the value of the type it extends.
+- *assumption*: a modelling choice rather than a number, stated with its reasoning so a paper can state it too.
 
 The `yaml` field is where the value lives in the agent-type file.
 
@@ -36,16 +37,20 @@ The `yaml` field is where the value lives in the agent-type file.
 | IV stand | acceleration (`max_acceleration`) | 0.6 ± 0.1 | m/s² | none | — | estimate |
 | IV stand | stopping (`max_deceleration`) | 1.5 ± 0.2 | m/s² | none | — | estimate, inherited from `elder` |
 | IV stand | footprint (`agent_radius`) | 0.38 ± 0.02 | m | none | — | estimate |
-| rollator, walking frame, IV stand | sight (`vision_range`, `vision_fov`) | 3.5 ± 0.8 m, 140 ± 15° | | none | — | estimate, inherited from `elder` |
+| rollator, walking frame, IV stand | sight (`vision_range`, `vision_fov`) | 4.0 ± 0.8 m, 140 ± 15° | | `elder`: avoidance starts about 1 m later than the adult's (5 m). The direction follows [Rapos 2021] (older adults leave more of the avoiding to the other walker); the size is ours | — | estimate, inherited from `elder` |
+| rollator, walking frame, IV stand | push away from others (`local_planner_params.repulsion_strength`, `repulsion_range`) | 1.6 ± 0.2, 0.3 ± 0.04 | | `elder`: weaker than the adult's 2.1, so older adults pass closer, as measured: 0.79 ± 0.18 m against 0.93 ± 0.17 m between young adults [Rapos 2021]; the size is ours | older adults about 68 years, young adults about 23 | estimate, inherited from `elder` |
 | rollator, walking frame, IV stand | detection delay (`detection_delay`) | not set | | the later avoidance of older adults comes from the `elder` type they extend (a shorter `vision_range`, weaker repulsion, see that row), so a delay here would count it twice. Older adults pass closer: 0.79 ± 0.18 m versus 0.93 ± 0.17 m between young adults [Rapos 2021] | older adults about 68 years, young adults about 23 | — |
+| rollator, walking frame | sideways steps (`locomotion.kinematics`) | none (`along_heading`) | | type definition: a rollator is steered and a frame is lifted to move, so neither steps sideways; a sharp turn is a pivot while nearly stopped | — | assumption |
+| white cane, rolling cane, walking frame | response to a robot (`perception.robot_response`) | halt | | they stop while a robot they sense is ahead and walk at half speed while it is beside or behind, without steering around it: a cane user cannot see where to step aside, and a frame user cannot step sideways | — | assumption |
 | limp | comfortable speed (`desired_velocity`) | 0.86 ± 0.12 | m/s | adult 1.1 m/s × 0.78: hip OA walks 22% slower than controls (−0.26 m/s, 95% CI −0.32 to −0.20; controls 1.24 m/s) [Baily 2023]; an earlier review found 26% [Constantinou 2014]. The SD is the adult's | meta-analysis of 33 studies | derived |
 | limp | maximum speed (`max_velocity`) | 1.17 ± 0.1 | m/s | adult 1.5 m/s × 0.78, same source | | derived |
-| limp | acceleration, stopping (`max_acceleration`, `max_deceleration`) | 1.5 ± 0.1, 2.5 ± 0.2 | m/s² | none | — | estimate, inherited from `adult` |
+| limp | acceleration, stopping (`max_acceleration`, `max_deceleration`) | 0.8 ± 0.1, 1.5 ± 0.2 | m/s² | none; starting and stopping load the painful leg, so both are slower than the adult's 1.5 and 2.5 | — | assumption |
+| limp | pivoting (`pivot_angular_velocity`) | 1.2 ± 0.15 | rad/s | none; pivoting loads the painful leg, slower than the adult's 2.0 | — | assumption |
 | limp | footprint (`agent_radius`) | 0.25 ± 0.02 | m | none | — | estimate, inherited from `adult` |
 | self-propelled wheelchair | comfortable speed (`desired_velocity`) | 1.04 ± 0.30 | m/s | [Slowik 2015] self-selected speed on the level (§2.2). Overground in a rehabilitation hospital: 1.17 ± 0.35 m/s [Coutinho 2013, abstract]; everyday bouts are slower, 0.48 ± 0.21 m/s [Sonenblum 2012] | 170 manual wheelchair users with paraplegia, on an ergometer | measured |
 | self-propelled wheelchair | maximum speed (`max_velocity`) | 1.90 ± 0.46 | m/s | [Slowik 2015] fastest comfortable speed | as above | measured |
 | self-propelled wheelchair | acceleration (`max_acceleration`) | 1.2 ± 0.1 | m/s² | none | — | estimate |
-| self-propelled wheelchair | stopping (`max_deceleration`) | 2.5 ± 0.2 | m/s² | none | — | estimate, inherited from `adult` |
+| self-propelled wheelchair | stopping (`max_deceleration`) | 1.0 ± 0.1 | m/s² | none; hand braking, gentle enough not to pitch the user forward | — | assumption |
 | self-propelled wheelchair | turning (`min_turning_radius`) | 0.05 | m | pivots in place; turning needs a 1.525 m circle [ADA 2010 §304.3], which the 1.1 m footprint sweeps | — | derived |
 | self-propelled wheelchair | footprint (`footprint_length`, `agent_radius`) | 1.1 / 0.325 | m | none | — | estimate |
 | pushed wheelchair | speed (`push_speed`, code default) | 0.9 | m/s | attendants pushing an NHS chair choose 0.8–1.12 m/s under a light load and 0.35–0.59 m/s under the heaviest [Suzuki 2015]; 0.9 is within the light-load range | a few healthy attendants | measured range |
