@@ -9,6 +9,7 @@ extends: adult
 
 desired_velocity: {mean: 0.82, std: 0.24, clip_low: 0.3, clip_high: 1.4}  # blind and low-vision cane users walk 0.820 ± 0.241 m/s, Emerson et al. 2019 JVIB Table 5
 max_velocity: {mean: 1.1, std: 0.2, clip_low: 0.7, clip_high: 1.7}  # estimate, no study: the adult's max/comfortable ratio 1.5/1.1 on that mean
+idle_gaze_rate: 0.0  # cannot see, so does not turn the body to look around when standing
 perception:
   vision_range: 0.0  # no usable sight
   proximity_sense: 0.0  # no usable sight; the cane replaces it (hearing is not modelled, see SOURCES.md)

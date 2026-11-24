@@ -11,6 +11,7 @@ extends: elder
 
 desired_velocity: {mean: 0.17, std: 0.02, clip_low: 0.12, clip_high: 0.22}  # estimate, see SOURCES.md
 max_velocity: {mean: 0.25, std: 0.03, clip_low: 0.18, clip_high: 0.32}  # estimate, see SOURCES.md
+idle_gaze_rate: 0.0  # no turning the body to look around when standing, the frame would swing round with it
 agent_radius: {mean: 0.32, std: 0.01, clip_low: 0.3, clip_high: 0.35}  # estimate, see SOURCES.md
 max_acceleration: {mean: 0.3, std: 0.05, clip_low: 0.15, clip_high: 0.5}  # estimate, see SOURCES.md
 max_deceleration: {mean: 0.6, std: 0.1, clip_low: 0.3, clip_high: 1.0}  # estimate, see SOURCES.md

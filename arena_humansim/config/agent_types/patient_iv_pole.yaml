@@ -6,6 +6,7 @@ extends: elder
 
 desired_velocity: {mean: 0.6, std: 0.05, clip_low: 0.4, clip_high: 0.75}  # estimate, see SOURCES.md
 max_velocity: {mean: 0.75, std: 0.05, clip_low: 0.55, clip_high: 0.9}  # estimate, see SOURCES.md
+idle_gaze_rate: 0.0  # no turning the body to look around when standing, the pole would swing round with it
 agent_radius: {mean: 0.38, std: 0.02, clip_low: 0.32, clip_high: 0.45}  # estimate, see SOURCES.md
 max_acceleration: {mean: 0.6, std: 0.1, clip_low: 0.3, clip_high: 1.0}  # estimate, see SOURCES.md
 min_turning_radius: {mean: 0.6, std: 0.05, clip_low: 0.3, clip_high: 1.2}  # estimate, see SOURCES.md

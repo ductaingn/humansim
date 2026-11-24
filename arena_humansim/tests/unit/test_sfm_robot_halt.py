@@ -83,3 +83,9 @@ def test_an_unknown_robot_response_is_rejected(tmp_path: Path) -> None:
     bad.write_text("name: bad\nextends: adult\nperception: {robot_response: freeze}\n")
     with pytest.raises((ValueError, TypeError)):
         load_agent_type_from_file(bad)
+
+
+@pytest.mark.parametrize("name", ["blind_white_cane", "blind_rolling_cane", "patient_walking_frame", "elder_rollator", "patient_iv_pole"])
+def test_cane_and_aid_users_do_not_turn_to_look_around_when_standing(name: str) -> None:
+    sampled = sample_agent_type(load_agent_type_from_file(CONFIG_DIR / f"{name}.yaml"), np.random.default_rng(0))
+    assert sampled.idle_gaze_rate_hz == 0.0
