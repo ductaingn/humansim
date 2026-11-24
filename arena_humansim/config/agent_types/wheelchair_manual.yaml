@@ -4,12 +4,13 @@ interaction_class: wheelchair
 assets: [human::mobility::wheelchair]
 climbs: []
 
-agent_radius: 0.325
-desired_velocity: {mean: 1.0, std: 0.15, clip_low: 0.4, clip_high: 1.4}  # experienced users: 1.04 m/s free speed
-max_acceleration: {mean: 1.2, std: 0.1, clip_low: 0.5, clip_high: 2.5}
+agent_radius: 0.325  # estimate, see SOURCES.md
+desired_velocity: {mean: 1.04, std: 0.30, clip_low: 0.3, clip_high: 1.6}  # self-selected on the level, Slowik et al. 2015 Clin Biomech (170 users with paraplegia, ergometer)
+max_velocity: {mean: 1.9, std: 0.46, clip_low: 1.0, clip_high: 2.8}  # fastest comfortable, same source
+max_acceleration: {mean: 1.2, std: 0.1, clip_low: 0.5, clip_high: 2.5}  # estimate, see SOURCES.md
 max_deceleration: {mean: 1.0, std: 0.1, clip_low: 0.6, clip_high: 1.5}  # assumption: hand braking, gentle enough not to pitch the user forward
-min_turning_radius: 0.05
-pivot_angular_velocity: {mean: 1.2, std: 0.2, clip_low: 0.6, clip_high: 2.0}
+min_turning_radius: 0.05  # pivots in place; the 1.1 m footprint sweeps the 1.525 m turning circle of ADA 2010 304.3
+pivot_angular_velocity: {mean: 1.2, std: 0.2, clip_low: 0.6, clip_high: 2.0}  # estimate, see SOURCES.md
 
 local_planner: hsfm
 local_planner_params:
@@ -22,7 +23,7 @@ locomotion:
   speed_profile:
     harmonics: [[0.12, 0.0], [0.05, 1.1]]
     amplitude_scale: {mean: 1.0, std: 0.15, clip_low: 0.5, clip_high: 1.5}
-  footprint_length: 1.1
+  footprint_length: 1.1  # estimate, see SOURCES.md
   recovery: {stall_after_s: 3.0, reverse_m: 0.3}
 
 pose:

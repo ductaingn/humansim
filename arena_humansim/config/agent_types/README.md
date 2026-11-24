@@ -4,6 +4,8 @@ Each `.yaml` file defines one agent type. Types are *distributions*, not fixed p
 
 ## Fields
 
+Values of the mobility-aid types and their sources: [SOURCES.md](SOURCES.md).
+
 Physical:
 
 - `desired_velocity`, `max_velocity` (m/s)
@@ -20,17 +22,22 @@ Perception (`perception:`):
 - `vision_range` (m)
 - `vision_fov` (degrees, full angle - 360 = omnidirectional)
 - `proximity_sense` (m) - near-field detection radius independent of FOV.
-- `vision_occlusion` (bool, not a distribution) - whether walls block line of sight.
-- `robot_awareness` - how this agent perceives robots. Accepts a preset name, `blind`, a boolean (`true` is `normal`, `false` is `blind`), a mapping of shifts, or a list of weighted entries for a crowd mixture. Mapping keys are `detection`, `fov`, `repulsion` and `reaction`; each value is a number of sigmas or a `{mean, std, clip_low, clip_high}` distribution of sigmas, and omitted keys stay at 0. A sigma is the agent's own spread of that dimension, so `detection: -2` moves the robot range by two times the `vision_range` std.
+- `vision_occlusion` (bool, not a distribution) - whether walls block line of sight. With it, walls also block hearing and the cane.
+- `hearing_range` (m, default 0 = off) - who the agent hears at any bearing: other pedestrians out to this range, robots out to this range times the robot's speed over 1 m/s times the `robot_loudness` node parameter (0 = silent robots); a robot slower than 0.02 m/s is silent.
+- `cane_reach`, `cane_width` (m, default 0 = off) - the cane's sweep: the agent touches anything whose disc reaches into the rectangle `cane_reach` ahead and `cane_width` across.
+- `detection_delay` (s, default 0) - a robot joins the agent's neighbours only after the agent has sensed it, by any channel, for this long without a break.
+- `robot_awareness` - how this agent perceives robots. Accepts a preset name, `blind`, a boolean (`true` is `normal`, `false` is `blind`), a mapping of shifts, or a list of weighted entries for a crowd mixture. Mapping keys are `detection`, `fov`, `repulsion`, `reaction`, `blind` and `yields`; each value is a number of sigmas or a `{mean, std, clip_low, clip_high}` distribution of sigmas, and omitted keys stay at 0. A sigma is the agent's own spread of that dimension, so `detection: -2` moves the robot range by two times the `vision_range` std.
   - `detection`: robot detection range, from `vision_range`; never past the agent's own range.
   - `fov`: robot field of view, from `vision_fov`, clipped to 0-360 degrees.
   - `repulsion`: gain on the SFM repulsion strength A against robots, `1 + sigmas x (std / mean)` of `repulsion_strength` (the SFM default when the planner declares none), floored at 0. ORCA scales its robot clearance by the same gain.
   - `reaction`: gain on the SFM repulsion range B against robots, `1 + sigmas x (std / mean)` of `repulsion_range` (same fallback), floored at 0.05. A larger B starts avoiding robots earlier.
   - `blind: true` removes robots from perception entirely.
+  - `yields: false` keeps the robot in perception but drops all avoidance of it: zero SFM repulsion, and ORCA leaves it out.
+  - Sensing the robot (`blind`, `detection`, `fov` and the perception channels above) and yielding to it (`yields`, `repulsion`, `reaction`) are separate, so a scenario can swap one without the other.
   - The former scalar keys (a numeric `robot_awareness`, `robot_repulsion_gain`, `robot_fov_gain` and `robot_reaction_gain`) are removed; the shifts above replace them.
 - `robot_response` - what the agent does with a robot it perceives (SFM planner). `avoid` (default) steers around it. `halt` never steers around it: the agent brakes to a stop while the robot is ahead of its heading and walks at `HALT_SLOW_FACTOR` (0.5) of its desired speed while the robot is beside or behind it, until the robot leaves its perception. Used by the long-cane users, who notice a robot only at close range and rely on others to give way, and by the walking-frame user, who cannot step sideways without lifting the frame.
 
-Built-in presets for robot awareness: `blind`, `distracted`, `normal`, `interested`, `aggressive`, `scared`. Their shifts are listed under the archetypes below.
+Built-in presets for robot awareness: `blind`, `distracted`, `normal`, `interested`, `aggressive`, `scared`, `not_yielding` (senses the robot, does not give way). Their shifts are listed under the archetypes below.
 
 ### Per-planner robot interaction capability matrix
 
@@ -41,6 +48,9 @@ Built-in presets for robot awareness: `blind`, `distracted`, `normal`, `interest
 | `robot_awareness` `fov` | robot cone, pruned in perception | ignored | asymmetric field of view against robots |
 | `robot_awareness` `reaction` | gain on repulsion range B against robots | gain on velocity obstacle time horizon against robots | how early the agent starts avoiding robots |
 | `robot_awareness` `blind` | no robot perception | no robot perception | robots are invisible to the agent |
+| `robot_awareness` `yields: false` | zero repulsion against robots | robots left out | the agent senses robots but does not give way |
+| `hearing_range`, `cane_reach` | add neighbours in perception | widen the robot distance cutoff, any bearing | hearing and cane touch |
+| `detection_delay` | holds robots back in perception | ignored | late noticing |
 
 > Note: ORCA builds its private neighbor list and solves instantaneous geometric velocity obstacles, so it reads `detection`, `blind`, `repulsion` and `reaction`; `fov` acts only through the perception-gated planners.
 

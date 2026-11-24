@@ -4,8 +4,8 @@
 name: limp
 extends: adult
 
-desired_velocity: {mean: 0.65, std: 0.05, clip_low: 0.5, clip_high: 0.8}
-max_velocity: {mean: 0.9, std: 0.05, clip_low: 0.7, clip_high: 1.1}
+desired_velocity: {mean: 0.86, std: 0.12, clip_low: 0.5, clip_high: 1.2}  # adult x 0.78: hip OA walks 22% slower (-0.26 m/s), Baily et al. 2023 JOSPT Open (33 studies)
+max_velocity: {mean: 1.17, std: 0.1, clip_low: 0.7, clip_high: 1.6}  # adult 1.5 x 0.78, same source
 # assumptions: starting, stopping and pivoting load the painful leg, so all are slower than an adult's (1.5 / 2.5, 2.0 rad/s)
 max_acceleration: {mean: 0.8, std: 0.1, clip_low: 0.4, clip_high: 1.2}
 max_deceleration: {mean: 1.5, std: 0.2, clip_low: 0.8, clip_high: 2.2}

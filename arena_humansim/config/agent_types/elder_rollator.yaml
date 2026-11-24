@@ -8,13 +8,16 @@
 name: elder_rollator
 extends: elder
 
-desired_velocity: {mean: 0.75, std: 0.2, clip_low: 0.4, clip_high: 1.1}  # geriatric rollator users: 0.6-1.07 m/s
-max_velocity: {mean: 0.95, std: 0.1, clip_low: 0.6, clip_high: 1.3}
-agent_radius: {mean: 0.32, std: 0.01, clip_low: 0.3, clip_high: 0.35}
-max_acceleration: {mean: 0.5, std: 0.1, clip_low: 0.3, clip_high: 0.8}
-max_deceleration: {mean: 0.8, std: 0.1, clip_low: 0.5, clip_high: 1.2}
-min_turning_radius: {mean: 0.6, std: 0.05, clip_low: 0.4, clip_high: 1.0}
-pivot_angular_velocity: {mean: 0.6, std: 0.1, clip_low: 0.4, clip_high: 0.9}
+desired_velocity: {mean: 0.56, std: 0.18, clip_low: 0.2, clip_high: 1.0}  # acute geriatric inpatients walk 0.56 ± 0.18 m/s with a rollator, Werner et al. 2020 Sensors Table 2
+max_velocity: {mean: 0.76, std: 0.1, clip_low: 0.4, clip_high: 1.3}  # estimate, no study: the adult's max/comfortable ratio 1.5/1.1 on that mean
+agent_radius: {mean: 0.32, std: 0.01, clip_low: 0.3, clip_high: 0.35}  # RollatorFitted 0.571 x 0.689 m, see SOURCES.md
+max_acceleration: {mean: 0.5, std: 0.1, clip_low: 0.3, clip_high: 0.8}  # estimate, see SOURCES.md
+max_deceleration: {mean: 0.8, std: 0.1, clip_low: 0.5, clip_high: 1.2}  # estimate, see SOURCES.md
+min_turning_radius: {mean: 0.6, std: 0.05, clip_low: 0.4, clip_high: 1.0}  # estimate, see SOURCES.md
+pivot_angular_velocity: {mean: 0.6, std: 0.1, clip_low: 0.4, clip_high: 0.9}  # estimate, see SOURCES.md
+
+perception:
+  detection_delay: 0.5  # estimate, see SOURCES.md
 
 locomotion:
   kinematics: along_heading
@@ -25,7 +28,7 @@ locomotion:
     harmonics: [[0.087, -3.09], [0.098, -1.84]]
   lateral_profile:
     harmonics: [[0.22, 0.15], [0.015, -2.91]]
-  footprint_length: 1.0
+  footprint_length: 1.0  # RollatorFitted 0.571 x 0.689 m, see SOURCES.md
 
 pose:
   hold: {l: {radius: 0.018, angle: -35}, r: {radius: 0.018, angle: -35}}  # RollatorFitted foam grips, diagonal across the palm (index base to heel of the hand)

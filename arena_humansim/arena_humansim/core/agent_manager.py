@@ -494,6 +494,7 @@ class AgentManager(TimeNode):
         self._last_despawned_ids: list[int] = []
 
         self._pool = AgentPool()
+        self._pool.robot_loudness = self._float_param("robot_loudness")
         for sub in self._pool_aware:
             sub.attach(self._pool)
 
@@ -1360,6 +1361,7 @@ class AgentManager(TimeNode):
         self._pool.robot_repulsion_gain[idx] = perception.robot_repulsion_gain
         self._pool.robot_reaction_gain[idx] = perception.robot_reaction_gain
         self._pool.robot_blind[idx] = perception.robot_blind
+        self._pool.robot_yields[idx] = perception.robot_yields
 
     def _lookup_agent_name(self, name: str, kind: int | None = None) -> int | None:
         """Exact name, else the unique agent whose name ends in ``/name``, optionally restricted to one AgentState kind."""
@@ -1559,7 +1561,7 @@ class AgentManager(TimeNode):
         t0 = time.perf_counter()
         default_layer = next(iter(self._perception_cache.values()), None)
         if default_layer is not None and default_layer.supports_pool:
-            default_layer.compute_pool(pool)
+            default_layer.compute_pool(pool, dt=self._dt)
         self._carrier.update(pool, self._interaction_manager.carries(), self._dt)
         self._carrier.exclude(pool)
 

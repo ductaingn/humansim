@@ -28,7 +28,7 @@ class Perception(PoolAware, Loggable, ABC):
         belief: BeliefState,
     ) -> BeliefState: ...
 
-    def compute_pool(self, pool: AgentPool) -> None:
+    def compute_pool(self, pool: AgentPool, dt: float | None = None) -> None:
         raise NotImplementedError
 
     def publish_markers(self, pub: MarkerPublisher) -> None:

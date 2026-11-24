@@ -7,15 +7,18 @@
 name: blind_rolling_cane
 extends: adult
 
-desired_velocity: {mean: 0.8, std: 0.05, clip_low: 0.6, clip_high: 0.95}
-max_velocity: {mean: 0.95, std: 0.05, clip_low: 0.75, clip_high: 1.15}
+desired_velocity: {mean: 0.82, std: 0.24, clip_low: 0.3, clip_high: 1.4}  # blind and low-vision cane users walk 0.820 ± 0.241 m/s, Emerson et al. 2019 JVIB Table 5
+max_velocity: {mean: 1.1, std: 0.2, clip_low: 0.7, clip_high: 1.7}  # estimate, no study: the adult's max/comfortable ratio 1.5/1.1 on that mean
 perception:
-  vision_range: {mean: 1.2, std: 0.05, clip_low: 1.0, clip_high: 1.4}
-  vision_fov: {mean: 120.0, std: 5.0, clip_low: 100.0, clip_high: 140.0}
-  proximity_sense: {mean: 1.2, std: 0.05, clip_low: 1.0, clip_high: 1.4}
+  vision_range: 0.0  # no usable sight
+  proximity_sense: 0.0  # no usable sight; hearing and the cane replace it
+  hearing_range: 2.0  # estimate: how far a robot driving 1 m/s is heard, see SOURCES.md
+  cane_reach: 1.05  # Arena cane (hold.py): 1.27 m held 0.1 m below its top, fist 0.9 m high and 0.3 m ahead
+  cane_width: 0.6  # Arena sweep +-0.30 m; measured arcs are 0.83 ± 0.23 m, Emerson et al. 2019 JVIB Table 4
+  detection_delay: 0.5  # estimate, see SOURCES.md
   vision_occlusion: true
   robot_response: halt  # a robot they sense stops them (ahead) or slows them (beside, behind); they do not steer around it
-max_acceleration: {mean: 0.8, std: 0.1, clip_low: 0.4, clip_high: 1.2}
+max_acceleration: {mean: 0.8, std: 0.1, clip_low: 0.4, clip_high: 1.2}  # estimate, see SOURCES.md
 
 locomotion:
   cadence: {base: 0.4, per_speed: 0.2815, min: 0.4, max: 2.2}

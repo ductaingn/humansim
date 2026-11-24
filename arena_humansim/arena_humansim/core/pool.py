@@ -14,6 +14,11 @@ _DEFAULT_CAPACITY = 512
 KIND_HUMAN = 0
 KIND_ROBOT = 1
 
+# Robot sound follows arena_auditory's drivetrain (sources/drivetrain/spec.py): the motor level grows with speed over 1 m/s and stops
+# below 0.02 m/s, and a level falls 6 dB per doubling of distance, so a robot is heard out to a distance in proportion to its speed.
+ROBOT_SOUND_REF_SPEED = 1.0
+ROBOT_SOUND_MIN_SPEED = 0.02
+
 
 def human_mask(pool: AgentPool) -> np.ndarray:
     return pool.kind[: pool.n] == KIND_HUMAN
@@ -77,6 +82,16 @@ class AgentPool:
         self.robot_blind = np.zeros(capacity, dtype=np.bool_)
         self.robot_halt = np.zeros(capacity, dtype=np.bool_)
         self.robot_halted = np.zeros(capacity, dtype=np.bool_)  # set each tick by the local planner: held still for a robot ahead
+        self.robot_yields = np.ones(capacity, dtype=np.bool_)
+        self.hearing_range = np.zeros(capacity, dtype=np.float64)
+        self.cane_reach = np.zeros(capacity, dtype=np.float64)
+        self.cane_width = np.zeros(capacity, dtype=np.float64)
+        self.detection_delay = np.zeros(capacity, dtype=np.float64)
+        # Scales the distance every robot is heard at: 0 is a silent robot, 1 the robot the agent types' hearing_range assumes at 1 m/s.
+        self.robot_loudness = 1.0
+        # (observer id, robot id) -> perception clock when the observer started sensing that robot, for detection_delay.
+        self.robot_sensed_since: dict[tuple[int, int], float] = {}
+        self.perception_clock = 0.0
 
         self.goal_pos = np.zeros((capacity, 2), dtype=np.float64)
         self.has_goal = np.zeros(capacity, dtype=np.bool_)
@@ -182,6 +197,11 @@ class AgentPool:
         self.robot_reaction_gain[i] = perc.robot_reaction_gain
         self.robot_blind[i] = perc.robot_blind
         self.robot_halt[i] = perc.robot_halt
+        self.robot_yields[i] = perc.robot_yields
+        self.hearing_range[i] = perc.hearing_range
+        self.cane_reach[i] = perc.cane_reach
+        self.cane_width[i] = perc.cane_width
+        self.detection_delay[i] = perc.detection_delay
 
     def swap_remove(self, agent_id: int) -> int | None:
         idx = self._id_to_idx.pop(agent_id)
@@ -210,6 +230,11 @@ class AgentPool:
                 self.robot_blind,
                 self.robot_halt,
                 self.robot_halted,
+                self.robot_yields,
+                self.hearing_range,
+                self.cane_reach,
+                self.cane_width,
+                self.detection_delay,
                 self.has_goal,
                 self.has_terminal,
                 self.goal_theta,
@@ -231,9 +256,16 @@ class AgentPool:
         self.n = last
         return swapped_id
 
+    def robot_hearing_scale(self, rows: np.ndarray) -> np.ndarray:
+        """Factor on hearing_range out to which each row is heard: robot_loudness times speed over 1 m/s for robots, 0 below 0.02 m/s, 1 for people."""
+        speed = np.hypot(self.vel[rows, 0], self.vel[rows, 1])
+        robot = np.where(speed < ROBOT_SOUND_MIN_SPEED, 0.0, speed / ROBOT_SOUND_REF_SPEED) * self.robot_loudness
+        return np.where(self.kind[rows] == KIND_ROBOT, robot, 1.0)
+
     def reset(self) -> None:
         self.n = 0
         self._id_to_idx.clear()
+        self.robot_sensed_since.clear()
         for ext in self._extensions:
             ext.on_pool_reset()
 
@@ -331,6 +363,13 @@ class AgentPool:
         self.robot_blind = _resize_1d(self.robot_blind)
         self.robot_halt = _resize_1d(self.robot_halt)
         self.robot_halted = _resize_1d(self.robot_halted)
+        yields_new = np.ones(new_cap, dtype=self.robot_yields.dtype)
+        yields_new[:old] = self.robot_yields[:old]
+        self.robot_yields = yields_new
+        self.hearing_range = _resize_1d(self.hearing_range)
+        self.cane_reach = _resize_1d(self.cane_reach)
+        self.cane_width = _resize_1d(self.cane_width)
+        self.detection_delay = _resize_1d(self.detection_delay)
         self.goal_pos = _resize_2d(self.goal_pos)
         self.has_goal = _resize_1d(self.has_goal)
         self.terminal_pos = _resize_2d(self.terminal_pos)
