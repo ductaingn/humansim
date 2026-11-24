@@ -29,12 +29,12 @@ class Gate:
 
 
 GATES = {
-    "doorway": Gate(baseline_time_ratio=1.0990, r_time=1.3737, s_stuck_s=2.0250, e_efficiency=0.0514),
-    "corridor_head_on_adult": Gate(baseline_time_ratio=1.1034, r_time=1.3793, s_stuck_s=2.0250, e_efficiency=0.0394),
-    "corridor_head_on_robot": Gate(baseline_time_ratio=1.1592, r_time=1.4490, s_stuck_s=2.5250, e_efficiency=0.0160),
-    "crowd_crossing": Gate(baseline_time_ratio=1.0967, r_time=1.3708, s_stuck_s=2.0500, e_efficiency=0.0675),
-    "corridor_u_turn": Gate(baseline_time_ratio=1.1978, r_time=1.4973, s_stuck_s=2.7750, e_efficiency=0.0855),
-    "robot_parked": Gate(baseline_time_ratio=1.0442, r_time=1.3053, s_stuck_s=2.0250, e_efficiency=0.0308),
+    "doorway": Gate(baseline_time_ratio=1.0990, r_time=1.3737, s_stuck_s=2.0250, e_efficiency=0.0508),
+    "corridor_head_on_adult": Gate(baseline_time_ratio=1.1055, r_time=1.3818, s_stuck_s=2.0250, e_efficiency=0.0387),
+    "corridor_head_on_robot": Gate(baseline_time_ratio=1.1515, r_time=1.4393, s_stuck_s=2.5000, e_efficiency=0.0150),
+    "crowd_crossing": Gate(baseline_time_ratio=1.0967, r_time=1.3708, s_stuck_s=2.0500, e_efficiency=0.0701),
+    "corridor_u_turn": Gate(baseline_time_ratio=1.2009, r_time=1.5012, s_stuck_s=2.8750, e_efficiency=0.0918),
+    "robot_parked": Gate(baseline_time_ratio=1.0442, r_time=1.3053, s_stuck_s=2.0250, e_efficiency=0.0309),
 }
 
 
